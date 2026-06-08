@@ -52,7 +52,7 @@ function pointReady(point?: PoseTrackPoint) {
 }
 
 function drawPoseTrack(report: TrainingReport, currentTimeSec: number) {
-  if (!report.videoVisibleToday || !report.videoUrl || !report.poseTrack?.frames?.length) return
+  if (!shouldShowPoseOverlay(report)) return
 
   const systemInfo = Taro.getSystemInfoSync()
   const rpx = systemInfo.windowWidth / 750
@@ -95,6 +95,15 @@ function drawPoseTrack(report: TrainingReport, currentTimeSec: number) {
   })
 
   ctx.draw()
+}
+
+function shouldShowPoseOverlay(report: TrainingReport) {
+  return Boolean(
+    report.videoVisibleToday &&
+    report.videoUrl &&
+    report.poseTrack?.quality === 'detected' &&
+    report.poseTrack.frames?.length
+  )
 }
 
 export default function ReportDetailPage() {
@@ -233,7 +242,7 @@ export default function ReportDetailPage() {
               className='training-video'
               onTimeUpdate={(e) => setVideoTimeSec(e.detail.currentTime)}
             />
-            {!!report.poseTrack?.frames?.length && (
+            {shouldShowPoseOverlay(report) && (
               <Canvas
                 canvasId={POSE_CANVAS_ID}
                 className='pose-track-canvas'
@@ -250,7 +259,7 @@ export default function ReportDetailPage() {
         )}
         <View className='video-meta-tags'>
           <View className='vmtag'>训练片段</View>
-          <View className='vmtag'>{report.poseTrack?.frames?.length ? '姿态追踪' : '待生成追踪'}</View>
+          <View className='vmtag'>{shouldShowPoseOverlay(report) ? '姿态追踪' : '仅视频回放'}</View>
           <View className='vmtag'>150MB 以内</View>
         </View>
       </View>

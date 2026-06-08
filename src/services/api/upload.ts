@@ -34,8 +34,8 @@ export async function getUploadToken(
   filename: string,
   sizeBytes: number,
   durationSec: number
-): Promise<{ uploadUrl: string; videoId: string }> {
-  const data = await request<{ videoId: string; uploadUrl: string }>('/videos/upload-token', {
+): Promise<{ uploadUrl: string; videoId: string; reused?: boolean; reportId?: string; message?: string }> {
+  const data = await request<{ videoId: string; uploadUrl: string; reused?: boolean; reportId?: string; message?: string }>('/videos/upload-token', {
     method: 'POST',
     body: {
       fileName: filename,
@@ -46,7 +46,13 @@ export async function getUploadToken(
       caseConsent: false,
     },
   })
-  return { uploadUrl: data.uploadUrl, videoId: data.videoId }
+  return {
+    uploadUrl: data.uploadUrl,
+    videoId: data.videoId,
+    reused: data.reused,
+    reportId: data.reportId,
+    message: data.message,
+  }
 }
 
 export async function doUpload(

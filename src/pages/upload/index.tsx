@@ -54,8 +54,16 @@ export default function UploadPage() {
     try {
       setStage('uploading')
       setProgress(0)
-      const { uploadUrl, videoId } = await uploadService.getUploadToken(file.name, file.size, file.duration)
+      const { uploadUrl, videoId, reused, reportId, message } = await uploadService.getUploadToken(file.name, file.size, file.duration)
       uploadService.getUploadQuota().then(setQuota).catch(() => {})
+      if (reused && reportId) {
+        setStage('done')
+        Taro.showToast({ title: message || '已复用原报告', icon: 'none' })
+        setTimeout(() => {
+          Taro.navigateTo({ url: `/pages/report-detail/index?id=${reportId}` })
+        }, 600)
+        return
+      }
       await uploadService.doUpload(uploadUrl, file.path, setProgress)
       await uploadService.notifyUploaded(videoId)
       const analysisTask = await analysisService.createTask(videoId)

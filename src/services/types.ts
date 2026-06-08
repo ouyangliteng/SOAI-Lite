@@ -79,6 +79,7 @@ export interface PoseTrackFrame {
 export interface PoseTrack {
   version: number
   coordinateSystem: 'normalized'
+  quality?: 'detected' | 'estimated' | string
   pointLabels: Record<string, string>
   frames: PoseTrackFrame[]
 }
@@ -135,7 +136,7 @@ export interface AuthService {
 
 export interface UploadService {
   getUploadQuota(): Promise<UploadQuota>
-  getUploadToken(filename: string, sizeBytes: number, durationSec: number): Promise<{ uploadUrl: string; videoId: string }>
+  getUploadToken(filename: string, sizeBytes: number, durationSec: number): Promise<{ uploadUrl: string; videoId: string; reused?: boolean; reportId?: string; message?: string }>
   doUpload(uploadUrl: string, filePath: string, onProgress: (p: number) => void): Promise<void>
   notifyUploaded(videoId: string): Promise<void>
 }

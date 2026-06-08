@@ -23,6 +23,7 @@ const MOCK_REPORT: TrainingReport = {
   poseTrack: {
     version: 1,
     coordinateSystem: 'normalized',
+    quality: 'estimated',
     pointLabels: {
       head: '头部',
       leftShoulder: '左肩',
