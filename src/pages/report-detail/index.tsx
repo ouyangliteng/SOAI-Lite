@@ -98,7 +98,7 @@ export default function ReportDetailPage() {
         <View className='video-meta-tags'>
           <View className='vmtag'>训练片段</View>
           <View className='vmtag'>AI 精华截取</View>
-          <View className='vmtag'>100MB 以内</View>
+          <View className='vmtag'>150MB 以内</View>
         </View>
       </View>
 
