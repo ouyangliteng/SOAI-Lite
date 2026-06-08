@@ -90,6 +90,18 @@ export interface ReportListItem {
   riskCount: number
 }
 
+export type ReportFeedbackRole = 'student' | 'coach'
+
+export interface ReportFeedbackPayload {
+  role: ReportFeedbackRole
+  accuracyRating: number
+  usefulnessRating: number
+  correctionText: string
+  comment: string
+  tags: string[]
+  aiLearningConsent: boolean
+}
+
 /* ── Service interfaces ── */
 
 export interface AuthService {
@@ -113,4 +125,5 @@ export interface AnalysisService {
 export interface ReportService {
   listReports(): Promise<ReportListItem[]>
   getReport(reportId: string): Promise<TrainingReport>
+  submitReportFeedback(reportId: string, payload: ReportFeedbackPayload): Promise<void>
 }

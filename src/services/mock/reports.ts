@@ -1,4 +1,4 @@
-import type { ReportListItem, TrainingReport } from '../types'
+import type { ReportFeedbackPayload, ReportListItem, TrainingReport } from '../types'
 
 const MOCK_REPORT: TrainingReport = {
   id: 'report_mock_001',
@@ -45,6 +45,10 @@ export async function listReports(): Promise<ReportListItem[]> {
 export async function getReport(reportId: string): Promise<TrainingReport> {
   await delay(400)
   return { ...MOCK_REPORT, id: reportId }
+}
+
+export async function submitReportFeedback(_reportId: string, _payload: ReportFeedbackPayload): Promise<void> {
+  await delay(200)
 }
 
 function delay(ms: number) {

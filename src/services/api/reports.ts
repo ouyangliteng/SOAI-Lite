@@ -1,14 +1,15 @@
 import Taro from '@tarojs/taro'
-import type { TrainingReport, ReportListItem, JointAngle } from '../types'
+import type { TrainingReport, ReportListItem, JointAngle, ReportFeedbackPayload } from '../types'
 
 const BASE = process.env.API_BASE_URL || 'https://api.soai.yun/api/lite/v1'
 
-function request<T>(path: string): Promise<T> {
+function request<T>(path: string, opts?: { method?: 'POST'; body?: object }): Promise<T> {
   return new Promise((resolve, reject) => {
     const token = Taro.getStorageSync('token') || ''
     Taro.request({
       url: `${BASE}${path}`,
-      method: 'GET',
+      method: opts?.method || 'GET',
+      data: opts?.body,
       header: {
         'Authorization': token ? `Bearer ${token}` : '',
         'Content-Type': 'application/json',
@@ -90,4 +91,11 @@ export async function listReports(): Promise<ReportListItem[]> {
     oneLineConclusion: item.oneLineConclusion || item.summary?.oneLineConclusion || '',
     riskCount: item.riskCount ?? 0,
   }))
+}
+
+export async function submitReportFeedback(reportId: string, payload: ReportFeedbackPayload): Promise<void> {
+  await request(`/reports/${reportId}/feedback`, {
+    method: 'POST',
+    body: payload,
+  })
 }

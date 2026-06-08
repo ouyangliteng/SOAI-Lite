@@ -1,19 +1,29 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Image, Video } from '@tarojs/components'
+import { View, Text, Image, Video, Textarea } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { reportService } from '../../services'
-import type { TrainingReport } from '../../services/types'
+import type { ReportFeedbackRole, TrainingReport } from '../../services/types'
 import './index.scss'
 
 type NavTab = 'assessment' | 'risks' | 'improvements'
 const TAB_LABELS: Record<NavTab, string> = { assessment: '综合评价', risks: '安全提醒', improvements: '进步' }
+const FEEDBACK_TAGS = ['姿态判断不准', '角度数据偏差', '安全评价需修正', '视频角度影响', '教练已确认']
 
 export default function ReportDetailPage() {
   const router = useRouter()
   const reportId = router.params.id ?? 'report_mock_001'
   const [report, setReport] = useState<TrainingReport | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<NavTab>('problems')
+  const [activeTab, setActiveTab] = useState<NavTab>('assessment')
+  const [feedbackRole, setFeedbackRole] = useState<ReportFeedbackRole>('student')
+  const [accuracyRating, setAccuracyRating] = useState(4)
+  const [usefulnessRating, setUsefulnessRating] = useState(4)
+  const [correctionText, setCorrectionText] = useState('')
+  const [feedbackComment, setFeedbackComment] = useState('')
+  const [feedbackTags, setFeedbackTags] = useState<string[]>([])
+  const [aiLearningConsent, setAiLearningConsent] = useState(true)
+  const [submittingFeedback, setSubmittingFeedback] = useState(false)
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
 
   useEffect(() => {
     reportService.getReport(reportId)
@@ -36,6 +46,38 @@ export default function ReportDetailPage() {
       return
     }
     Taro.showToast({ title: '截图功能开发中', icon: 'none', duration: 2000 })
+  }
+
+  function toggleFeedbackTag(tag: string) {
+    setFeedbackTags(prev => (
+      prev.includes(tag) ? prev.filter(item => item !== tag) : [...prev, tag]
+    ))
+  }
+
+  async function handleSubmitFeedback() {
+    if (submittingFeedback || feedbackSubmitted) return
+    if (!correctionText.trim() && !feedbackComment.trim()) {
+      Taro.showToast({ title: '请填写评价或修正说明', icon: 'none' })
+      return
+    }
+    setSubmittingFeedback(true)
+    try {
+      await reportService.submitReportFeedback(reportId, {
+        role: feedbackRole,
+        accuracyRating,
+        usefulnessRating,
+        correctionText: correctionText.trim(),
+        comment: feedbackComment.trim(),
+        tags: feedbackTags,
+        aiLearningConsent,
+      })
+      setFeedbackSubmitted(true)
+      Taro.showToast({ title: '已记录评价', icon: 'success' })
+    } catch {
+      Taro.showToast({ title: '提交失败，请稍后重试', icon: 'error' })
+    } finally {
+      setSubmittingFeedback(false)
+    }
   }
 
   if (loading) {
@@ -200,6 +242,102 @@ export default function ReportDetailPage() {
             </View>
           </View>
         )}
+
+        <View className='feedback-card'>
+          <View className='feedback-head'>
+            <View>
+              <View className='feedback-title'>报告评价</View>
+              <View className='feedback-sub'>用于校准 AI 姿态识别与安全骑乘评价样本</View>
+            </View>
+            {feedbackSubmitted && <View className='feedback-status'>已提交</View>}
+          </View>
+
+          <View className='feedback-role-row'>
+            {([
+              ['student', '学员填写'],
+              ['coach', '教练填写'],
+            ] as [ReportFeedbackRole, string][]).map(([role, label]) => (
+              <View
+                key={role}
+                className={`feedback-role ${feedbackRole === role ? 'feedback-role-active' : ''}`}
+                onClick={() => setFeedbackRole(role)}
+              >
+                {label}
+              </View>
+            ))}
+          </View>
+
+          <View className='feedback-rating-row'>
+            <Text className='feedback-label'>准确度</Text>
+            <View className='rating-buttons'>
+              {[1, 2, 3, 4, 5].map(score => (
+                <View
+                  key={score}
+                  className={`rating-dot ${accuracyRating === score ? 'rating-dot-active' : ''}`}
+                  onClick={() => setAccuracyRating(score)}
+                >
+                  {score}
+                </View>
+              ))}
+            </View>
+          </View>
+          <View className='feedback-rating-row'>
+            <Text className='feedback-label'>实用性</Text>
+            <View className='rating-buttons'>
+              {[1, 2, 3, 4, 5].map(score => (
+                <View
+                  key={score}
+                  className={`rating-dot ${usefulnessRating === score ? 'rating-dot-active' : ''}`}
+                  onClick={() => setUsefulnessRating(score)}
+                >
+                  {score}
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View className='feedback-tags'>
+            {FEEDBACK_TAGS.map(tag => (
+              <View
+                key={tag}
+                className={`feedback-tag ${feedbackTags.includes(tag) ? 'feedback-tag-active' : ''}`}
+                onClick={() => toggleFeedbackTag(tag)}
+              >
+                {tag}
+              </View>
+            ))}
+          </View>
+
+          <Textarea
+            className='feedback-textarea'
+            value={correctionText}
+            maxlength={300}
+            placeholder='哪些判断不准确？例如：小腿位置实际更稳定、视频角度导致膝盖识别偏差。'
+            onInput={(e) => setCorrectionText(e.detail.value)}
+          />
+          <Textarea
+            className='feedback-textarea'
+            value={feedbackComment}
+            maxlength={300}
+            placeholder='补充现场事实或教练修正建议，可作为后续 AI 学习样本。'
+            onInput={(e) => setFeedbackComment(e.detail.value)}
+          />
+
+          <View
+            className='feedback-consent'
+            onClick={() => setAiLearningConsent(!aiLearningConsent)}
+          >
+            <View className={`feedback-checkbox ${aiLearningConsent ? 'feedback-checkbox-active' : ''}`} />
+            <Text>同意将本次评价作为 AI 准确性校准样本，仅用于内部模型与规则优化。</Text>
+          </View>
+
+          <View
+            className={`feedback-submit ${feedbackSubmitted ? 'feedback-submit-disabled' : ''}`}
+            onClick={handleSubmitFeedback}
+          >
+            {submittingFeedback ? '提交中…' : feedbackSubmitted ? '评价已记录' : '提交报告评价'}
+          </View>
+        </View>
 
         <View className='save-btn' onClick={handleSaveScreenshot}>
           <Text>📥</Text>
