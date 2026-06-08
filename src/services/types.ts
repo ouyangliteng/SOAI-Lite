@@ -43,6 +43,8 @@ export interface AnalysisTask {
   status: AnalysisStatus
   progressText: string
   reportId?: string
+  errorCode?: string
+  errorMessage?: string
   createdAt: string
 }
 

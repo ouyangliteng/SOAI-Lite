@@ -76,7 +76,7 @@ export default function HomePage() {
       <View className='card'>
         <View className='card-title'>上传训练视频</View>
         <View className='muted' style={{ marginTop: '10rpx' }}>
-          建议 10 ~ 60 秒，MP4/MOV，150MB 以内，画面包含骑手上身与腿部。
+          真实姿态识别测试限 15 秒内，MP4/MOV，150MB 以内，画面需包含骑手上身与腿部。
         </View>
         <View
           className='btn btn-primary'

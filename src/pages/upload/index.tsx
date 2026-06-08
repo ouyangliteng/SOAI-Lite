@@ -6,6 +6,7 @@ import type { UploadQuota } from '../../services/types'
 import './index.scss'
 
 const MAX_SIZE = 150 * 1024 * 1024
+const MAX_DURATION_SEC = 15
 
 type Stage = 'idle' | 'selected' | 'uploading' | 'done' | 'error'
 
@@ -35,7 +36,12 @@ export default function UploadPage() {
         Taro.showToast({ title: '视频超过 150MB，请压缩后上传', icon: 'error' })
         return
       }
-      setFile({ path: item.tempFilePath, name: `training_${Date.now()}.mp4`, size: item.size, duration: item.duration ?? 0 })
+      const duration = Math.round(item.duration ?? 0)
+      if (duration > MAX_DURATION_SEC) {
+        Taro.showToast({ title: '请上传 15 秒内真实测试视频', icon: 'none' })
+        return
+      }
+      setFile({ path: item.tempFilePath, name: `training_${Date.now()}.mp4`, size: item.size, duration })
       setStage('selected')
     } catch {
       // user cancelled
@@ -90,14 +96,14 @@ export default function UploadPage() {
           <Text className='upload-tip'>
             {stage === 'idle' ? '点击选择训练视频' : '已选择，点击重新选择'}
           </Text>
-          <Text className='upload-tip' style={{ fontSize: '22rpx' }}>MP4 / MOV · 150MB 以内</Text>
+          <Text className='upload-tip' style={{ fontSize: '22rpx' }}>真实姿态识别测试 · 15 秒内 · 150MB 以内</Text>
         </View>
       )}
 
       {file && (
         <View className='file-info'>
           <View className='file-name'>{file.name}</View>
-          <View className='file-meta'>{(file.size / (1024 * 1024)).toFixed(1)} MB</View>
+          <View className='file-meta'>{(file.size / (1024 * 1024)).toFixed(1)} MB · {file.duration || '--'} 秒</View>
         </View>
       )}
 

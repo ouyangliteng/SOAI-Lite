@@ -20,6 +20,7 @@ export default function AnalysisPage() {
   const taskId = router.params.taskId ?? null
   const [status, setStatus] = useState<AnalysisStatus>('queued')
   const [progressText, setProgressText] = useState('排队等待中…')
+  const [failureText, setFailureText] = useState('真实姿态识别超时，请稍后重试。')
   const [failed, setFailed] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTime = useRef(Date.now())
@@ -43,6 +44,7 @@ export default function AnalysisPage() {
           }, 800)
         } else if (task.status === 'failed') {
           clearInterval(timerRef.current!)
+          setFailureText(task.errorMessage || task.progressText || '真实姿态识别失败，请稍后重试。')
           setFailed(true)
         } else if (task.status === 'completed' && !task.reportId) {
           clearInterval(timerRef.current!)
@@ -79,8 +81,8 @@ export default function AnalysisPage() {
       <View className='page'>
         <View className='error-center'>
           <Text className='error-icon'>⚠️</Text>
-          <View className='card-title'>分析超时或失败</View>
-          <View className='muted'>请返回重新上传视频，或稍后重试。</View>
+          <View className='card-title'>真实姿态识别未完成</View>
+          <View className='muted'>{failureText}</View>
           <View
             className='btn btn-secondary'
             style={{ marginTop: '32rpx', width: '100%' }}

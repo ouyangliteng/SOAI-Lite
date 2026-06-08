@@ -259,9 +259,14 @@ export default function ReportDetailPage() {
         )}
         <View className='video-meta-tags'>
           <View className='vmtag'>训练片段</View>
-          <View className='vmtag'>{shouldShowPoseOverlay(report) ? '姿态追踪' : '仅视频回放'}</View>
-          <View className='vmtag'>150MB 以内</View>
+          <View className='vmtag'>{shouldShowPoseOverlay(report) ? '真实姿态追踪' : '仅视频回放'}</View>
+          <View className='vmtag'>15 秒内</View>
         </View>
+        {report.videoVisibleToday && report.videoUrl && !shouldShowPoseOverlay(report) && (
+          <View className='muted' style={{ marginTop: '12rpx', fontSize: '22rpx' }}>
+            真实模型未返回可用轨迹，本次不展示关节点。
+          </View>
+        )}
       </View>
 
       {/* AI 分析面板 */}
