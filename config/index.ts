@@ -21,9 +21,12 @@ export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
       "@tarojs/plugin-generator"
     ],
     defineConstants: {
+      'process.env.USE_MOCK': JSON.stringify('true'),
+      'process.env.API_BASE_URL': JSON.stringify('https://lite.soai.yun/api'),
     },
     copy: {
       patterns: [
+        { from: 'src/assets/', to: 'dist/assets/' }
       ],
       options: {
       }
