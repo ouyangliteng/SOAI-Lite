@@ -1,15 +1,27 @@
-import { PropsWithChildren } from 'react'
-import { useLaunch } from '@tarojs/taro'
-
+import { useEffect } from 'react'
+import Taro from '@tarojs/taro'
+import { useAuthStore } from './store/authStore'
 import './app.scss'
 
-function App({ children }: PropsWithChildren<any>) {
-  useLaunch(() => {
-    console.log('App launched.')
-  })
+function App({ children }: { children: React.ReactNode }) {
+  const { setToken, setProfile, isLoggedIn } = useAuthStore()
 
-  // children 是将要会渲染的页面
-  return children
+  useEffect(() => {
+    const token = Taro.getStorageSync('token') as string
+    const profile = Taro.getStorageSync('profile')
+    if (token) {
+      setToken(token)
+      if (profile) setProfile(profile)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      Taro.reLaunch({ url: '/pages/login/index' })
+    }
+  }, [isLoggedIn()])
+
+  return <>{children}</>
 }
 
 export default App
