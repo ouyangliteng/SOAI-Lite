@@ -1,0 +1,110 @@
+/* 视频回放区 */
+.video-section { background: #0d1117; padding: 20rpx 28rpx 16rpx; }
+.video-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14rpx; }
+.video-section-title { font-size: 28rpx; font-weight: 700; color: #e6edf3; }
+.video-expire-tag { font-size: 22rpx; color: #8b949e; }
+.video-expired-placeholder {
+  height: 240rpx;
+  background: #161b22;
+  border: 1rpx solid #21262d;
+  border-radius: 16rpx;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12rpx;
+  color: #8b949e; font-size: 26rpx;
+}
+.video-meta-tags { display: flex; gap: 12rpx; margin-top: 12rpx; flex-wrap: wrap; }
+.vmtag {
+  padding: 6rpx 16rpx;
+  background: #161b22;
+  border: 1rpx solid #21262d;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  color: #8b949e;
+}
+
+/* AI 分析面板 */
+.analytics-panel { position: relative; }
+.analytics-reference { width: 100%; height: auto; display: block; }
+.analytics-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+}
+
+/* 追踪面板 */
+.tracking-panel {
+  position: absolute;
+  top: 16rpx; left: 16rpx;
+  background: rgba(7,24,39,0.82);
+  border: 1rpx solid rgba(34,240,200,0.3);
+  border-radius: 12rpx;
+  padding: 10rpx 16rpx;
+}
+.tracking-row { display: flex; align-items: center; gap: 10rpx; }
+.tracking-dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: #22f0c8; }
+.tracking-label { font-size: 20rpx; color: #22f0c8; font-weight: 700; }
+.tracking-value { font-size: 20rpx; color: rgba(255,255,255,0.7); }
+
+/* 关节角度 chips */
+.angle-chips {
+  position: absolute;
+  top: 16rpx; right: 16rpx;
+  display: flex; flex-direction: column; gap: 10rpx;
+}
+.angle-chip {
+  background: rgba(7,24,39,0.85);
+  border: 1rpx solid rgba(255,255,255,0.12);
+  border-radius: 10rpx;
+  padding: 8rpx 14rpx;
+  text-align: center;
+  min-width: 110rpx;
+}
+.angle-chip-joint { font-size: 20rpx; color: rgba(255,255,255,0.55); }
+.angle-chip-value { font-size: 28rpx; font-weight: 900; color: #fff; margin: 2rpx 0; }
+.angle-chip-warn  { color: #d29922; }
+.angle-chip-ok    { color: #22f0c8; }
+
+/* 指标条 */
+.metrics-bar {
+  position: absolute;
+  bottom: 16rpx; left: 16rpx; right: 16rpx;
+  background: rgba(7,24,39,0.88);
+  border: 1rpx solid rgba(255,255,255,0.08);
+  border-radius: 14rpx;
+  padding: 16rpx 20rpx;
+}
+.metrics-title { font-size: 22rpx; color: rgba(255,255,255,0.5); margin-bottom: 10rpx; }
+.metrics-row { display: flex; align-items: center; gap: 14rpx; margin-top: 8rpx; }
+.metrics-name { font-size: 22rpx; color: rgba(255,255,255,0.6); width: 120rpx; flex-shrink: 0; }
+.metrics-track { flex: 1; height: 8rpx; background: rgba(255,255,255,0.1); border-radius: 999rpx; }
+.metrics-fill  { height: 8rpx; border-radius: 999rpx; background: linear-gradient(90deg, #00b896, #22f0c8); }
+.metrics-score { font-size: 22rpx; color: #fff; font-weight: 700; width: 60rpx; text-align: right; flex-shrink: 0; }
+
+/* 报告 Tab */
+.report-nav { display: flex; border-bottom: 1rpx solid #21262d; margin: 28rpx 0 0; }
+.nav-tab { flex: 1; text-align: center; padding: 20rpx 0; font-size: 26rpx; color: #8b949e; }
+.nav-tab-active { color: #00b896; border-bottom: 3rpx solid #00b896; font-weight: 700; }
+
+.problem-list { margin-top: 16rpx; }
+.problem-item {
+  display: flex; gap: 16rpx;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #21262d;
+  font-size: 26rpx; color: #e6edf3;
+}
+.problem-dot { color: #00b896; flex-shrink: 0; }
+.risk-dot    { color: #f85149; }
+.improve-dot { color: #22f0c8; }
+
+/* 保存截图 */
+.save-btn {
+  display: flex; align-items: center; justify-content: center; gap: 12rpx;
+  height: 88rpx;
+  border-radius: 14rpx;
+  background: #00b896;
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 700;
+  margin-top: 40rpx;
+}
