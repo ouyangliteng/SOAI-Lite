@@ -1,0 +1,19 @@
+.report-item {
+  padding: 24rpx 28rpx;
+  background: #161b22;
+  border: 1rpx solid #21262d;
+  border-radius: 16rpx;
+  margin-top: 20rpx;
+}
+.report-item-score { font-size: 56rpx; font-weight: 900; color: #00b896; line-height: 1; }
+.report-item-date  { font-size: 24rpx; color: #8b949e; }
+.report-item-text  { font-size: 26rpx; color: #e6edf3; margin-top: 8rpx; }
+.report-risk-badge {
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #f85149;
+  background: rgba(248,81,73,0.1);
+}
+.empty-state { text-align: center; padding: 80rpx 0; color: #8b949e; font-size: 28rpx; }
