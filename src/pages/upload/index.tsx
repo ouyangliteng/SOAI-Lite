@@ -10,7 +10,7 @@ type Stage = 'idle' | 'selected' | 'uploading' | 'done' | 'error'
 
 export default function UploadPage() {
   const [stage, setStage] = useState<Stage>('idle')
-  const [file, setFile] = useState<{ path: string; name: string; size: number } | null>(null)
+  const [file, setFile] = useState<{ path: string; name: string; size: number; duration: number } | null>(null)
   const [progress, setProgress] = useState(0)
   const [errMsg, setErrMsg] = useState('')
   const [consent, setConsent] = useState(false)
@@ -26,7 +26,7 @@ export default function UploadPage() {
         Taro.showToast({ title: '视频超过 100MB，请压缩后上传', icon: 'error' })
         return
       }
-      setFile({ path: item.tempFilePath, name: `training_${Date.now()}.mp4`, size: item.size })
+      setFile({ path: item.tempFilePath, name: `training_${Date.now()}.mp4`, size: item.size, duration: item.duration ?? 0 })
       setStage('selected')
     } catch {
       // user cancelled
@@ -41,7 +41,7 @@ export default function UploadPage() {
     try {
       setStage('uploading')
       setProgress(0)
-      const { uploadUrl, videoId } = await uploadService.getUploadToken(file.name, file.size)
+      const { uploadUrl, videoId } = await uploadService.getUploadToken(file.name, file.size, file.duration)
       await uploadService.doUpload(uploadUrl, file.path, setProgress)
       await uploadService.notifyUploaded(videoId)
       const analysisTask = await analysisService.createTask(videoId)

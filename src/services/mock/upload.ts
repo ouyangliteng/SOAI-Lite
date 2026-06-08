@@ -1,6 +1,7 @@
 export async function getUploadToken(
   _filename: string,
-  _sizeBytes: number
+  _sizeBytes: number,
+  _durationSec: number
 ): Promise<{ uploadUrl: string; videoId: string }> {
   await delay(300)
   return {

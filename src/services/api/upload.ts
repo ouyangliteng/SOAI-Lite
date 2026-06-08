@@ -23,14 +23,15 @@ function request<T>(path: string, opts: { method: 'POST'; body: object }): Promi
 
 export async function getUploadToken(
   filename: string,
-  sizeBytes: number
+  sizeBytes: number,
+  durationSec: number
 ): Promise<{ uploadUrl: string; videoId: string }> {
   const data = await request<{ videoId: string; uploadUrl: string }>('/api/videos/upload-token', {
     method: 'POST',
     body: {
       fileName: filename,
       sizeMb: Number((sizeBytes / (1024 * 1024)).toFixed(1)),
-      durationSec: 0,
+      durationSec: Math.round(durationSec),
       format: 'mp4',
       analysisConsent: true,
       caseConsent: false,
