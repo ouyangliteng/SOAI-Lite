@@ -60,8 +60,8 @@ export default function UploadPage() {
       setCurrentTaskId(analysisTask.id)
       setStage('done')
       Taro.navigateTo({ url: '/pages/analysis/index' })
-    } catch (e: any) {
-      setErrMsg(e.message || '上传失败')
+    } catch (e) {
+      setErrMsg(e instanceof Error ? e.message : '上传失败')
       setStage('error')
     }
   }

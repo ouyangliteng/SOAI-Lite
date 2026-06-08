@@ -46,6 +46,9 @@ export default function AnalysisPage() {
         } else if (task.status === 'failed') {
           clearInterval(timerRef.current!)
           setFailed(true)
+        } else if (task.status === 'completed' && !task.reportId) {
+          clearInterval(timerRef.current!)
+          setFailed(true)
         }
       } catch {
         // network hiccup, keep polling
@@ -53,6 +56,25 @@ export default function AnalysisPage() {
     }, 3000)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [currentTaskId])
+
+  if (!currentTaskId) {
+    return (
+      <View className='page'>
+        <View className='error-center'>
+          <Text className='error-icon'>📋</Text>
+          <View className='card-title'>没有进行中的分析任务</View>
+          <View className='muted' style={{ marginTop: '12rpx' }}>请先上传训练视频开始分析</View>
+          <View
+            className='btn btn-secondary'
+            style={{ marginTop: '32rpx', width: '100%' }}
+            onClick={() => Taro.navigateTo({ url: '/pages/upload/index' })}
+          >
+            去上传视频
+          </View>
+        </View>
+      </View>
+    )
+  }
 
   if (failed) {
     return (

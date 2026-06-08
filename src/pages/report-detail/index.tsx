@@ -35,8 +35,7 @@ export default function ReportDetailPage() {
       })
       return
     }
-    Taro.showToast({ title: '正在保存…', icon: 'loading', duration: 1500 })
-    setTimeout(() => Taro.showToast({ title: '已保存到相册', icon: 'success' }), 1500)
+    Taro.showToast({ title: '截图功能开发中', icon: 'none', duration: 2000 })
   }
 
   if (loading) {
