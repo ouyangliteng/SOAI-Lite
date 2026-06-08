@@ -1,20 +1,57 @@
-import type { AnalysisTask } from '../types'
+import Taro from '@tarojs/taro'
+import type { AnalysisTask, AnalysisStatus } from '../types'
 
-const BASE = process.env.API_BASE_URL || 'https://lite.soai.yun/api/lite/v1'
+const BASE = process.env.API_BASE_URL || 'http://127.0.0.1:8787'
 
-async function request<T>(path: string, opts?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opts,
+function request<T>(path: string, opts?: { method?: 'POST'; body?: object }): Promise<T> {
+  return new Promise((resolve, reject) => {
+    Taro.request({
+      url: `${BASE}${path}`,
+      method: opts?.method || 'GET',
+      data: opts?.body,
+      header: { 'Content-Type': 'application/json' },
+      success: (res) => {
+        if (res.statusCode >= 400) {
+          reject(new Error((res.data as any)?.message || `API ${res.statusCode}`))
+        } else {
+          resolve(res.data as T)
+        }
+      },
+      fail: (err) => reject(new Error(err.errMsg)),
+    })
   })
-  if (!res.ok) throw new Error(`API ${res.status}`)
-  return res.json()
+}
+
+function mapStatus(s: string): AnalysisStatus {
+  if (s === 'completed') return 'completed'
+  if (s === 'failed') return 'failed'
+  if (s === 'generating_report') return 'generating_report'
+  if (s === 'queued') return 'queued'
+  return 'analyzing'
 }
 
 export async function createTask(videoId: string): Promise<AnalysisTask> {
-  return request('/analysis/tasks', { method: 'POST', body: JSON.stringify({ videoId }) })
+  const data = await request<{ taskId: string; status: string }>('/api/analysis/tasks', {
+    method: 'POST',
+    body: { videoId, studentId: 'student_001' },
+  })
+  return {
+    id: data.taskId,
+    videoId,
+    status: mapStatus(data.status),
+    progressText: '排队等待中…',
+    createdAt: new Date().toISOString(),
+  }
 }
 
 export async function getTask(taskId: string): Promise<AnalysisTask> {
-  return request(`/analysis/tasks/${taskId}`)
+  const data = await request<any>(`/api/analysis/tasks/${taskId}`)
+  return {
+    id: data.taskId,
+    videoId: data.videoId || '',
+    status: mapStatus(data.status),
+    progressText: data.progressText || '',
+    reportId: data.reportId || undefined,
+    createdAt: data.createdAt || new Date().toISOString(),
+  }
 }
