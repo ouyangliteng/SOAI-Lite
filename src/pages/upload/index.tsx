@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { uploadService, analysisService } from '../../services'
-import { useReportStore } from '../../store/reportStore'
 import './index.scss'
 
 const MAX_SIZE = 100 * 1024 * 1024
@@ -15,8 +14,6 @@ export default function UploadPage() {
   const [progress, setProgress] = useState(0)
   const [errMsg, setErrMsg] = useState('')
   const [consent, setConsent] = useState(false)
-  const { setCurrentTaskId } = useReportStore()
-
   async function handleChoose() {
     try {
       const res = await Taro.chooseMedia({
@@ -48,9 +45,8 @@ export default function UploadPage() {
       await uploadService.doUpload(uploadUrl, file.path, setProgress)
       await uploadService.notifyUploaded(videoId)
       const analysisTask = await analysisService.createTask(videoId)
-      setCurrentTaskId(analysisTask.id)
       setStage('done')
-      Taro.navigateTo({ url: '/pages/analysis/index' })
+      Taro.navigateTo({ url: `/pages/analysis/index?taskId=${analysisTask.id}` })
     } catch (e) {
       setErrMsg(e instanceof Error ? e.message : '上传失败')
       setStage('error')

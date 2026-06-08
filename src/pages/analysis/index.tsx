@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text } from '@tarojs/components'
-import Taro from '@tarojs/taro'
+import Taro, { useRouter } from '@tarojs/taro'
 import { analysisService } from '../../services'
-import { useReportStore } from '../../store/reportStore'
 import type { AnalysisStatus } from '../../services/types'
 import './index.scss'
 
@@ -17,7 +16,8 @@ const STEPS: { key: string; label: string }[] = [
 const STATUS_ORDER = ['start', 'queued', 'analyzing', 'generating_report', 'completed']
 
 export default function AnalysisPage() {
-  const { currentTaskId, setCurrentReportId, clearTask } = useReportStore()
+  const router = useRouter()
+  const taskId = router.params.taskId ?? null
   const [status, setStatus] = useState<AnalysisStatus>('queued')
   const [progressText, setProgressText] = useState('排队等待中…')
   const [failed, setFailed] = useState(false)
@@ -25,7 +25,7 @@ export default function AnalysisPage() {
   const startTime = useRef(Date.now())
 
   useEffect(() => {
-    if (!currentTaskId) return
+    if (!taskId) return
     timerRef.current = setInterval(async () => {
       if (Date.now() - startTime.current > 5 * 60 * 1000) {
         clearInterval(timerRef.current!)
@@ -33,13 +33,11 @@ export default function AnalysisPage() {
         return
       }
       try {
-        const task = await analysisService.getTask(currentTaskId)
+        const task = await analysisService.getTask(taskId)
         setStatus(task.status)
         setProgressText(task.progressText)
         if (task.status === 'completed' && task.reportId) {
           clearInterval(timerRef.current!)
-          setCurrentReportId(task.reportId)
-          clearTask()
           setTimeout(() => {
             Taro.redirectTo({ url: `/pages/report-detail/index?id=${task.reportId}` })
           }, 800)
@@ -55,9 +53,9 @@ export default function AnalysisPage() {
       }
     }, 3000)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [currentTaskId])
+  }, [taskId])
 
-  if (!currentTaskId) {
+  if (!taskId) {
     return (
       <View className='page'>
         <View className='error-center'>
