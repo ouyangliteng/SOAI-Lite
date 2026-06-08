@@ -27,7 +27,7 @@ function request<T>(path: string): Promise<T> {
 
 function fixVideoUrl(url: string): string {
   if (!url) return ''
-  // backend local storage uses local://soai/ prefix; remap to HTTP served path
+  // backend local storage uses local://soai/ prefix; remap to the lite API storage route.
   if (url.startsWith('local://soai/')) {
     return `${BASE}/storage/${url.slice('local://soai/'.length)}`
   }
@@ -66,6 +66,11 @@ export async function getReport(reportId: string): Promise<TrainingReport> {
     trackingConfidence: Math.round((r.poseSummary?.averageConfidence ?? 0) * 100),
     problemPoints: (r.problemPoints || []).map((p: any) => p.detail || p.title),
     riskPoints: (r.riskPoints || []).map((p: any) => p.detail || p.title),
+    safetyRidingEvaluation: Array.isArray(r.safetyRidingEvaluation)
+      ? r.safetyRidingEvaluation
+      : Array.isArray(r.summary?.safetyRidingEvaluation)
+        ? r.summary.safetyRidingEvaluation
+        : [],
     improvements: r.improvements || [],
     nextTrainingFocus: Array.isArray(r.nextTrainingFocus)
       ? r.nextTrainingFocus.join('；')

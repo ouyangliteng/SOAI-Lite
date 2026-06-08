@@ -35,7 +35,7 @@ function mapStatus(s: string): AnalysisStatus {
 }
 
 export async function createTask(videoId: string): Promise<AnalysisTask> {
-  const data = await request<{ taskId: string; status: string }>('/analysis/tasks', {
+  const data = await request<{ taskId: string; status: string; reportId?: string; progressText?: string; createdAt?: string }>('/analysis/tasks', {
     method: 'POST',
     body: { videoId },
   })
@@ -43,8 +43,9 @@ export async function createTask(videoId: string): Promise<AnalysisTask> {
     id: data.taskId,
     videoId,
     status: mapStatus(data.status),
-    progressText: '排队等待中…',
-    createdAt: new Date().toISOString(),
+    progressText: data.progressText || '排队等待中…',
+    reportId: data.reportId,
+    createdAt: data.createdAt || new Date().toISOString(),
   }
 }
 

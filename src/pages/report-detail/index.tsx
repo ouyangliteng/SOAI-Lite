@@ -5,8 +5,8 @@ import { reportService } from '../../services'
 import type { TrainingReport } from '../../services/types'
 import './index.scss'
 
-type NavTab = 'problems' | 'risks' | 'improvements'
-const TAB_LABELS: Record<NavTab, string> = { problems: '问题点', risks: '风险点', improvements: '进步' }
+type NavTab = 'assessment' | 'risks' | 'improvements'
+const TAB_LABELS: Record<NavTab, string> = { assessment: '综合评价', risks: '安全提醒', improvements: '进步' }
 
 export default function ReportDetailPage() {
   const router = useRouter()
@@ -55,6 +55,13 @@ export default function ReportDetailPage() {
     ['辅助精度', report.scores.aidAccuracy],
     ['安全意识', report.scores.safetyAwareness],
   ]
+  const safetyEvaluation = report.safetyRidingEvaluation?.length
+    ? report.safetyRidingEvaluation
+    : [
+      report.problemPoints[0] || report.nextTrainingFocus,
+      report.riskPoints[0] || '本次未发现明显高风险动作，但 AI 不能替代教练对马匹状态、场地和学员体感的现场判断。',
+      '建议穿戴合规马术护具，训练中保持与教练耳机沟通，出现失衡、紧张或路线偏移时先减速确认。',
+    ]
 
   return (
     <View>
@@ -86,7 +93,7 @@ export default function ReportDetailPage() {
             controls
             showFullscreenBtn
             initialTime={0}
-            style={{ width: '100%', borderRadius: '16rpx' }}
+            className='training-video'
           />
         ) : (
           <View className='video-expired-placeholder'>
@@ -120,30 +127,33 @@ export default function ReportDetailPage() {
             </View>
           </View>
 
-          <View className='angle-chips'>
-            {topAngles.map(a => (
-              <View key={a.joint} className='angle-chip'>
-                <View className='angle-chip-joint'>{a.joint}</View>
-                <View className={`angle-chip-value ${a.status === 'warning' ? 'angle-chip-warn' : 'angle-chip-ok'}`}>
-                  {a.angle}°
-                </View>
-                <View className='angle-chip-joint'>{a.normal}</View>
-              </View>
-            ))}
-          </View>
+        </View>
+      </View>
 
-          <View className='metrics-bar'>
-            <View className='metrics-title'>5 维评分</View>
-            {scoreEntries.map(([name, val]) => (
-              <View key={name} className='metrics-row'>
-                <Text className='metrics-name'>{name}</Text>
-                <View className='metrics-track'>
-                  <View className='metrics-fill' style={{ width: `${val}%` }} />
-                </View>
-                <Text className='metrics-score'>{val}</Text>
+      <View className='analysis-summary'>
+        <View className='angle-grid'>
+          {topAngles.map(a => (
+            <View key={a.joint} className='angle-chip'>
+              <View className='angle-chip-joint'>{a.joint}</View>
+              <View className={`angle-chip-value ${a.status === 'warning' ? 'angle-chip-warn' : 'angle-chip-ok'}`}>
+                {a.angle}°
               </View>
-            ))}
-          </View>
+              <View className='angle-chip-joint'>{a.normal}</View>
+            </View>
+          ))}
+        </View>
+
+        <View className='metrics-card'>
+          <View className='metrics-title'>5 维评分</View>
+          {scoreEntries.map(([name, val]) => (
+            <View key={name} className='metrics-row'>
+              <Text className='metrics-name'>{name}</Text>
+              <View className='metrics-track'>
+                <View className='metrics-fill' style={{ width: `${val}%` }} />
+              </View>
+              <Text className='metrics-score'>{val}</Text>
+            </View>
+          ))}
         </View>
       </View>
 
@@ -162,9 +172,9 @@ export default function ReportDetailPage() {
         </View>
 
         <View className='problem-list'>
-          {activeTab === 'problems' && report.problemPoints.map((p, i) => (
+          {activeTab === 'assessment' && safetyEvaluation.map((p, i) => (
             <View key={i} className='problem-item'>
-              <Text className='problem-dot'>•</Text>
+              <Text className='problem-dot'>{i + 1}</Text>
               <Text>{p}</Text>
             </View>
           ))}
@@ -182,7 +192,7 @@ export default function ReportDetailPage() {
           ))}
         </View>
 
-        {activeTab === 'problems' && (
+        {activeTab === 'assessment' && (
           <View className='card' style={{ marginTop: '28rpx' }}>
             <View className='muted'>下次训练重点</View>
             <View style={{ marginTop: '12rpx', color: '#e6edf3', fontSize: '28rpx', lineHeight: '1.6' }}>

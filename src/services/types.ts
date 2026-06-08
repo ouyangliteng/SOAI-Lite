@@ -74,6 +74,7 @@ export interface TrainingReport {
   trackingConfidence: number
   problemPoints: string[]
   riskPoints: string[]
+  safetyRidingEvaluation?: string[]
   improvements: string[]
   nextTrainingFocus: string
   trendSummary?: string
