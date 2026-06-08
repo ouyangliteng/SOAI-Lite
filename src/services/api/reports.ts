@@ -1,14 +1,18 @@
 import Taro from '@tarojs/taro'
 import type { TrainingReport, ReportListItem, JointAngle } from '../types'
 
-const BASE = process.env.API_BASE_URL || 'http://127.0.0.1:8787'
+const BASE = process.env.API_BASE_URL || 'https://api.soai.yun/api/lite/v1'
 
 function request<T>(path: string): Promise<T> {
   return new Promise((resolve, reject) => {
+    const token = Taro.getStorageSync('token') || ''
     Taro.request({
       url: `${BASE}${path}`,
       method: 'GET',
-      header: { 'Content-Type': 'application/json' },
+      header: {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json',
+      },
       success: (res) => {
         if (res.statusCode >= 400) {
           reject(new Error((res.data as any)?.message || `API ${res.statusCode}`))
@@ -48,7 +52,7 @@ function toJointAngles(ruleResults: any[]): JointAngle[] {
 }
 
 export async function getReport(reportId: string): Promise<TrainingReport> {
-  const { report: r } = await request<{ report: any }>(`/api/reports/${reportId}`)
+  const { report: r } = await request<{ report: any }>(`/reports/${reportId}`)
   return {
     id: r.id,
     studentId: r.studentId,
@@ -73,7 +77,7 @@ export async function getReport(reportId: string): Promise<TrainingReport> {
 }
 
 export async function listReports(): Promise<ReportListItem[]> {
-  const data = await request<{ items?: any[] }>(`/api/students/student_001/trends?limit=10`)
+  const data = await request<{ items?: any[] }>(`/reports?limit=10`)
   return (data.items || []).map(item => ({
     id: item.reportId,
     overallScore: item.overallScore,

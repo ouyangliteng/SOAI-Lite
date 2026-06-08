@@ -22,7 +22,7 @@ export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
     ],
     defineConstants: {
       'process.env.USE_MOCK': JSON.stringify('false'),
-      'process.env.API_BASE_URL': JSON.stringify('http://127.0.0.1:8787'),
+      'process.env.API_BASE_URL': JSON.stringify('https://api.soai.yun/api/lite/v1'),
     },
     copy: {
       patterns: [

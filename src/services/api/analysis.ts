@@ -1,15 +1,19 @@
 import Taro from '@tarojs/taro'
 import type { AnalysisTask, AnalysisStatus } from '../types'
 
-const BASE = process.env.API_BASE_URL || 'http://127.0.0.1:8787'
+const BASE = process.env.API_BASE_URL || 'https://api.soai.yun/api/lite/v1'
 
 function request<T>(path: string, opts?: { method?: 'POST'; body?: object }): Promise<T> {
   return new Promise((resolve, reject) => {
+    const token = Taro.getStorageSync('token') || ''
     Taro.request({
       url: `${BASE}${path}`,
       method: opts?.method || 'GET',
       data: opts?.body,
-      header: { 'Content-Type': 'application/json' },
+      header: {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json',
+      },
       success: (res) => {
         if (res.statusCode >= 400) {
           reject(new Error((res.data as any)?.message || `API ${res.statusCode}`))
@@ -31,9 +35,9 @@ function mapStatus(s: string): AnalysisStatus {
 }
 
 export async function createTask(videoId: string): Promise<AnalysisTask> {
-  const data = await request<{ taskId: string; status: string }>('/api/analysis/tasks', {
+  const data = await request<{ taskId: string; status: string }>('/analysis/tasks', {
     method: 'POST',
-    body: { videoId, studentId: 'student_001' },
+    body: { videoId },
   })
   return {
     id: data.taskId,
@@ -45,7 +49,7 @@ export async function createTask(videoId: string): Promise<AnalysisTask> {
 }
 
 export async function getTask(taskId: string): Promise<AnalysisTask> {
-  const data = await request<any>(`/api/analysis/tasks/${taskId}`)
+  const data = await request<any>(`/analysis/tasks/${taskId}`)
   return {
     id: data.taskId,
     videoId: data.videoId || '',

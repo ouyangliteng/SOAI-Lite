@@ -1,15 +1,29 @@
+import Taro from '@tarojs/taro'
 import type { StudentProfile } from '../types'
 
-const BASE = process.env.API_BASE_URL || 'https://lite.soai.yun/api/lite/v1'
+const BASE = process.env.API_BASE_URL || 'https://api.soai.yun/api/lite/v1'
 
-async function request<T>(path: string, opts?: RequestInit): Promise<T> {
-  const token = ''
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    ...opts,
+function request<T>(path: string, opts?: { method?: 'POST'; body?: object }): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const token = Taro.getStorageSync('token') || ''
+    Taro.request({
+      url: `${BASE}${path}`,
+      method: opts?.method || 'GET',
+      data: opts?.body,
+      header: {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json',
+      },
+      success: (res) => {
+        if (res.statusCode >= 400) {
+          reject(new Error((res.data as any)?.message || `API ${res.statusCode}`))
+        } else {
+          resolve(res.data as T)
+        }
+      },
+      fail: (err) => reject(new Error(err.errMsg)),
+    })
   })
-  if (!res.ok) throw new Error(`API ${res.status}`)
-  return res.json()
 }
 
 export async function sendCode(phone: string): Promise<void> {
@@ -22,6 +36,16 @@ export async function verifyCode(
 ): Promise<{ token: string; profile: StudentProfile }> {
   return request('/auth/verify', {
     method: 'POST',
-    body: JSON.stringify({ phone, code }),
+    body: { phone, code },
+  })
+}
+
+export async function loginWithWx(
+  code: string,
+  anonymousId: string
+): Promise<{ token: string; profile: StudentProfile }> {
+  return request('/auth/wx-login', {
+    method: 'POST',
+    body: { code, anonymousId },
   })
 }

@@ -23,6 +23,13 @@ export interface TrainingVideo {
   createdAt: string
 }
 
+export interface UploadQuota {
+  limit: number
+  used: number
+  remaining: number
+  date: string
+}
+
 export type AnalysisStatus =
   | 'queued'
   | 'analyzing'
@@ -87,9 +94,11 @@ export interface ReportListItem {
 export interface AuthService {
   sendCode(phone: string): Promise<void>
   verifyCode(phone: string, code: string): Promise<{ token: string; profile: StudentProfile }>
+  loginWithWx(code: string, anonymousId: string): Promise<{ token: string; profile: StudentProfile }>
 }
 
 export interface UploadService {
+  getUploadQuota(): Promise<UploadQuota>
   getUploadToken(filename: string, sizeBytes: number, durationSec: number): Promise<{ uploadUrl: string; videoId: string }>
   doUpload(uploadUrl: string, filePath: string, onProgress: (p: number) => void): Promise<void>
   notifyUploaded(videoId: string): Promise<void>

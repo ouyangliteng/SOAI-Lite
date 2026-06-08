@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { uploadService, analysisService } from '../../services'
+import type { UploadQuota } from '../../services/types'
 import './index.scss'
 
-const MAX_SIZE = 100 * 1024 * 1024
+const MAX_SIZE = 150 * 1024 * 1024
 
 type Stage = 'idle' | 'selected' | 'uploading' | 'done' | 'error'
 
@@ -14,6 +15,14 @@ export default function UploadPage() {
   const [progress, setProgress] = useState(0)
   const [errMsg, setErrMsg] = useState('')
   const [consent, setConsent] = useState(false)
+  const [quota, setQuota] = useState<UploadQuota | null>(null)
+
+  useEffect(() => {
+    uploadService.getUploadQuota()
+      .then(setQuota)
+      .catch(() => {})
+  }, [])
+
   async function handleChoose() {
     try {
       const res = await Taro.chooseMedia({
@@ -23,7 +32,7 @@ export default function UploadPage() {
       })
       const item = res.tempFiles[0]
       if (item.size > MAX_SIZE) {
-        Taro.showToast({ title: '视频超过 100MB，请压缩后上传', icon: 'error' })
+        Taro.showToast({ title: '视频超过 150MB，请压缩后上传', icon: 'error' })
         return
       }
       setFile({ path: item.tempFilePath, name: `training_${Date.now()}.mp4`, size: item.size, duration: item.duration ?? 0 })
@@ -34,6 +43,10 @@ export default function UploadPage() {
   }
 
   async function handleUpload() {
+    if (quota && quota.remaining <= 0) {
+      Taro.showToast({ title: '今天已达到 3 次上传上限', icon: 'none' })
+      return
+    }
     if (!file || !consent) {
       if (!consent) Taro.showToast({ title: '请勾选视频使用授权', icon: 'none' })
       return
@@ -42,6 +55,7 @@ export default function UploadPage() {
       setStage('uploading')
       setProgress(0)
       const { uploadUrl, videoId } = await uploadService.getUploadToken(file.name, file.size, file.duration)
+      uploadService.getUploadQuota().then(setQuota).catch(() => {})
       await uploadService.doUpload(uploadUrl, file.path, setProgress)
       await uploadService.notifyUploaded(videoId)
       const analysisTask = await analysisService.createTask(videoId)
@@ -54,14 +68,21 @@ export default function UploadPage() {
   }
 
   return (
-    <View className='page'>
+      <View className='page'>
+      {quota && (
+        <View className='file-info'>
+          <View className='file-name'>今日剩余分析次数</View>
+          <View className='file-meta'>{quota.remaining} / {quota.limit}</View>
+        </View>
+      )}
+
       {(stage === 'idle' || stage === 'selected') && (
         <View className='upload-zone' onClick={handleChoose}>
           <Text className='upload-icon'>🎬</Text>
           <Text className='upload-tip'>
             {stage === 'idle' ? '点击选择训练视频' : '已选择，点击重新选择'}
           </Text>
-          <Text className='upload-tip' style={{ fontSize: '22rpx' }}>MP4 / MOV · 100MB 以内</Text>
+          <Text className='upload-tip' style={{ fontSize: '22rpx' }}>MP4 / MOV · 150MB 以内</Text>
         </View>
       )}
 

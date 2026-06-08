@@ -1,14 +1,19 @@
 import Taro from '@tarojs/taro'
+import type { UploadQuota } from '../types'
 
-const BASE = process.env.API_BASE_URL || 'http://127.0.0.1:8787'
+const BASE = process.env.API_BASE_URL || 'https://api.soai.yun/api/lite/v1'
 
-function request<T>(path: string, opts: { method: 'POST'; body: object }): Promise<T> {
+function request<T>(path: string, opts?: { method?: 'POST'; body?: object }): Promise<T> {
   return new Promise((resolve, reject) => {
+    const token = Taro.getStorageSync('token') || ''
     Taro.request({
       url: `${BASE}${path}`,
-      method: 'POST',
-      data: opts.body,
-      header: { 'Content-Type': 'application/json' },
+      method: opts?.method || 'GET',
+      data: opts?.body,
+      header: {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json',
+      },
       success: (res) => {
         if (res.statusCode >= 400) {
           reject(new Error((res.data as any)?.message || `API ${res.statusCode}`))
@@ -21,12 +26,16 @@ function request<T>(path: string, opts: { method: 'POST'; body: object }): Promi
   })
 }
 
+export async function getUploadQuota(): Promise<UploadQuota> {
+  return request<UploadQuota>('/upload/quota')
+}
+
 export async function getUploadToken(
   filename: string,
   sizeBytes: number,
   durationSec: number
 ): Promise<{ uploadUrl: string; videoId: string }> {
-  const data = await request<{ videoId: string; uploadUrl: string }>('/api/videos/upload-token', {
+  const data = await request<{ videoId: string; uploadUrl: string }>('/videos/upload-token', {
     method: 'POST',
     body: {
       fileName: filename,
@@ -58,7 +67,7 @@ export async function doUpload(
 }
 
 export async function notifyUploaded(videoId: string): Promise<void> {
-  await request(`/api/videos/${videoId}/upload-status`, {
+  await request(`/videos/${videoId}/upload-status`, {
     method: 'POST',
     body: { uploadStatus: 'uploaded', uploadProgress: 100, uploadError: '' },
   })

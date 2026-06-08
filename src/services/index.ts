@@ -10,7 +10,7 @@ import * as realReports from './api/reports'
 
 const USE_MOCK = process.env.USE_MOCK !== 'false'
 
-export const authService     = mockAuth  // login always uses mock (no real SMS server)
+export const authService     = USE_MOCK ? mockAuth : realAuth
 export const uploadService   = USE_MOCK ? mockUpload   : realUpload
 export const analysisService = USE_MOCK ? mockAnalysis : realAnalysis
 export const reportService   = USE_MOCK ? mockReports  : realReports

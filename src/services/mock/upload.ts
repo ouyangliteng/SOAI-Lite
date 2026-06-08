@@ -1,3 +1,13 @@
+export async function getUploadQuota() {
+  await delay(100)
+  return {
+    limit: 3,
+    used: 0,
+    remaining: 3,
+    date: new Date().toISOString().slice(0, 10),
+  }
+}
+
 export async function getUploadToken(
   _filename: string,
   _sizeBytes: number,

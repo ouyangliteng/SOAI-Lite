@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useAuthStore } from '../../store/authStore'
-import * as mockAuth from '../../services/mock/auth'
+import { authService } from '../../services'
 import './index.scss'
 
 export default function LoginPage() {
@@ -14,7 +14,8 @@ export default function LoginPage() {
     try {
       setLoading(true)
       const { code } = await Taro.login()
-      const { token, profile } = await mockAuth.loginWithWx(code)
+      const anonymousId = getOrCreateAnonymousId()
+      const { token, profile } = await authService.loginWithWx(code, anonymousId)
       Taro.setStorageSync('token', token)
       Taro.setStorageSync('profile', profile)
       setToken(token)
@@ -50,4 +51,13 @@ export default function LoginPage() {
       </View>
     </View>
   )
+}
+
+function getOrCreateAnonymousId() {
+  const key = 'soai_lite_anonymous_id'
+  const saved = Taro.getStorageSync(key)
+  if (saved) return saved
+  const next = `lite_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  Taro.setStorageSync(key, next)
+  return next
 }
