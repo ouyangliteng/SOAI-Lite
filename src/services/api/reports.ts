@@ -21,6 +21,15 @@ function request<T>(path: string): Promise<T> {
   })
 }
 
+function fixVideoUrl(url: string): string {
+  if (!url) return ''
+  // backend local storage uses local://soai/ prefix; remap to HTTP served path
+  if (url.startsWith('local://soai/')) {
+    return `${BASE}/storage/${url.slice('local://soai/'.length)}`
+  }
+  return url
+}
+
 const RULE_META: Record<string, { joint: string; normal: string }> = {
   upper_body_stability: { joint: '上身稳定', normal: '肩髋垂直' },
   lower_leg_stability:  { joint: '小腿位置', normal: '踝髋对齐' },
@@ -45,7 +54,7 @@ export async function getReport(reportId: string): Promise<TrainingReport> {
     studentId: r.studentId,
     videoId: r.videoId,
     videoVisibleToday: !!r.videoVisibleToday,
-    videoUrl: r.videoUrl,
+    videoUrl: fixVideoUrl(r.videoPath || r.videoUrl || ''),
     overallScore: r.summary?.overallScore ?? 0,
     scores: r.scores,
     jointAngles: toJointAngles(r.ruleResults || []),

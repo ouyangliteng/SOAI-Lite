@@ -5,7 +5,7 @@ const MOCK_REPORT: TrainingReport = {
   studentId: 'student_001',
   videoId: 'video_001',
   videoVisibleToday: true,
-  videoUrl: '',
+  videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
   overallScore: 83,
   scores: {
     postureControl: 85,

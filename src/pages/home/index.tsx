@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Image } from '@tarojs/components'
-import Taro, { useDidShow } from '@tarojs/taro'
+import Taro, { useDidShow, getCurrentInstance } from '@tarojs/taro'
 import { useAuthStore } from '../../store/authStore'
 import { useReportStore } from '../../store/reportStore'
 import { reportService, analysisService } from '../../services'
@@ -10,12 +10,16 @@ import './index.scss'
 export default function HomePage() {
   const { profile } = useAuthStore()
   const { currentTaskId } = useReportStore()
+  const [reports, setReports] = useState<ReportListItem[]>([])
   const [latestReport, setLatestReport] = useState<ReportListItem | null>(null)
   const [activeTask, setActiveTask] = useState<AnalysisTask | null>(null)
 
   useDidShow(async () => {
+    try { (getCurrentInstance()?.page as any)?.getTabBar?.()?.setSelected?.(0) } catch {}
     const list = await reportService.listReports().catch(() => [])
-    setLatestReport(list[0] ?? null)
+    const sorted = [...list].sort((a, b) => b.trainingDate.localeCompare(a.trainingDate))
+    setReports(sorted)
+    setLatestReport(sorted[0] ?? null)
 
     if (currentTaskId) {
       const task = await analysisService.getTask(currentTaskId).catch(() => null)
@@ -29,9 +33,14 @@ export default function HomePage() {
 
   const initial = profile?.name?.slice(0, 1) ?? '学'
 
+  function goReport() {
+    if (latestReport) Taro.navigateTo({ url: `/pages/report-detail/index?id=${latestReport.id}` })
+  }
+
   return (
     <View className='page'>
-      <View className='card'>
+      {/* 用户卡 → 我的 */}
+      <View className='card' style={{ cursor: 'pointer' }} onClick={() => Taro.switchTab({ url: '/pages/profile/index' })}>
         <View className='row'>
           <View className='home-avatar'>
             {profile?.avatarUrl
@@ -43,20 +52,22 @@ export default function HomePage() {
             <View className='card-title'>{profile?.name ?? '学员'}</View>
             <View className='muted'>{profile?.currentLevel ?? ''}{profile?.clubName ? ` · ${profile.clubName}` : ''}</View>
           </View>
+          <Text className='muted' style={{ fontSize: '28rpx' }}>›</Text>
         </View>
       </View>
 
+      {/* 三个 stat 卡，各自跳转 */}
       <View className='stats-row'>
-        <View className='stat-card'>
+        <View className='stat-card' onClick={() => Taro.switchTab({ url: '/pages/reports/index' })}>
           <View className='stat-value'>{latestReport?.overallScore ?? '--'}</View>
           <View className='stat-label'>最近得分</View>
         </View>
-        <View className='stat-card'>
-          <View className='stat-value'>3</View>
+        <View className='stat-card' onClick={() => Taro.switchTab({ url: '/pages/reports/index' })}>
+          <View className='stat-value'>{reports.length || '--'}</View>
           <View className='stat-label'>训练次数</View>
         </View>
-        <View className='stat-card'>
-          <View className='stat-value'>1</View>
+        <View className='stat-card' onClick={goReport}>
+          <View className='stat-value'>{latestReport?.riskCount ?? '--'}</View>
           <View className='stat-label'>风险项</View>
         </View>
       </View>
@@ -107,11 +118,16 @@ export default function HomePage() {
           </View>
           <View className='muted' style={{ marginTop: '8rpx' }}>{latestReport.oneLineConclusion}</View>
           <View className='divider' />
-          <View className='muted'>风险点 {latestReport.riskCount} 项</View>
+          <View
+            className='muted risk-tap'
+            onClick={goReport}
+          >
+            风险点 {latestReport.riskCount} 项 <Text style={{ color: '#00b896', marginLeft: '8rpx' }}>› 查看风险评估</Text>
+          </View>
           <View
             className='btn btn-ghost'
             style={{ marginTop: '24rpx' }}
-            onClick={() => Taro.navigateTo({ url: `/pages/report-detail/index?id=${latestReport.id}` })}
+            onClick={goReport}
           >
             查看完整报告
           </View>

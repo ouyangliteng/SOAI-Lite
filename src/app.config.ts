@@ -15,14 +15,15 @@ export default defineAppConfig({
     backgroundColor: '#0d1117',
   },
   tabBar: {
+    custom: true,
     color: '#8b949e',
     selectedColor: '#00b896',
     backgroundColor: '#0d1117',
     borderStyle: 'black',
     list: [
-      { pagePath: 'pages/home/index',    text: '首页',  iconPath: 'assets/tab-home.png',    selectedIconPath: 'assets/tab-home-on.png' },
-      { pagePath: 'pages/reports/index', text: '报告',  iconPath: 'assets/tab-report.png',  selectedIconPath: 'assets/tab-report-on.png' },
-      { pagePath: 'pages/profile/index', text: '我的',  iconPath: 'assets/tab-profile.png', selectedIconPath: 'assets/tab-profile-on.png' },
+      { pagePath: 'pages/home/index',    text: '首页' },
+      { pagePath: 'pages/reports/index', text: '报告' },
+      { pagePath: 'pages/profile/index', text: '我的' },
     ],
   },
 })

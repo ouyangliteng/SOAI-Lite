@@ -59,7 +59,7 @@ export default function ReportDetailPage() {
   return (
     <View>
       {/* 得分头部 */}
-      <View className='page' style={{ paddingBottom: 0 }}>
+      <View style={{ padding: '28rpx 28rpx 0' }}>
         <View className='card'>
           <View className='row'>
             <View>

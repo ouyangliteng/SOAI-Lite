@@ -25,6 +25,23 @@ export async function verifyCode(
   }
 }
 
+export async function loginWithWx(
+  _code: string
+): Promise<{ token: string; profile: import('../types').StudentProfile }> {
+  await delay(600)
+  return {
+    token: `mock_wx_jwt_${Date.now()}`,
+    profile: {
+      id: 'student_001',
+      name: '微信用户',
+      phone: '',
+      currentLevel: '初级骑手',
+      analysisConsent: true,
+      caseConsent: false,
+    },
+  }
+}
+
 function delay(ms: number) {
   return new Promise(r => setTimeout(r, ms))
 }

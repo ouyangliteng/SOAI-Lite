@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { View, Text } from '@tarojs/components'
-import Taro, { useDidShow } from '@tarojs/taro'
+import Taro, { useDidShow, getCurrentInstance } from '@tarojs/taro'
 import { reportService } from '../../services'
 import type { ReportListItem } from '../../services/types'
 import './index.scss'
@@ -10,9 +10,10 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
 
   useDidShow(async () => {
+    try { (getCurrentInstance()?.page as any)?.getTabBar?.()?.setSelected?.(1) } catch {}
     setLoading(true)
     const list = await reportService.listReports().catch(() => [])
-    setReports(list)
+    setReports([...list].sort((a, b) => b.trainingDate.localeCompare(a.trainingDate)))
     setLoading(false)
   })
 
