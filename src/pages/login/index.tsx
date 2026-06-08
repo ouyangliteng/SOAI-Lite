@@ -20,7 +20,11 @@ export default function LoginPage() {
   }, [countdown])
 
   async function handleSendCode() {
-    if (phone.length !== 11 || countdown > 0) return
+    if (phone.length !== 11) {
+      Taro.showToast({ title: '请输入 11 位手机号', icon: 'none' })
+      return
+    }
+    if (countdown > 0) return
     try {
       setLoading(true)
       await authService.sendCode(phone)
