@@ -1,0 +1,60 @@
+.upload-zone {
+  margin-top: 32rpx;
+  height: 320rpx;
+  border: 2rpx dashed #21262d;
+  border-radius: 20rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  background: #161b22;
+}
+.upload-icon { font-size: 64rpx; }
+.upload-tip  { font-size: 26rpx; color: #8b949e; }
+
+.file-info {
+  margin-top: 28rpx;
+  padding: 28rpx;
+  background: #161b22;
+  border: 1rpx solid #21262d;
+  border-radius: 16rpx;
+}
+.file-name  { font-size: 28rpx; color: #e6edf3; font-weight: 600; }
+.file-meta  { font-size: 24rpx; color: #8b949e; margin-top: 8rpx; }
+
+.upload-progress { margin-top: 24rpx; }
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+  font-size: 24rpx;
+  color: #8b949e;
+}
+
+.error-box {
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+  background: rgba(248,81,73,0.1);
+  border: 1rpx solid #f85149;
+  border-radius: 12rpx;
+  color: #f85149;
+  font-size: 26rpx;
+}
+
+.consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  margin-top: 28rpx;
+}
+.consent-check {
+  width: 36rpx; height: 36rpx; flex-shrink: 0;
+  border: 2rpx solid #21262d;
+  border-radius: 8rpx;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22rpx; color: #00b896;
+  background: #161b22;
+}
+.consent-check-on { border-color: #00b896; background: rgba(0,184,150,0.15); }
+.consent-text { font-size: 24rpx; color: #8b949e; line-height: 1.5; }
