@@ -4,7 +4,7 @@ import { useAuthStore } from './store/authStore'
 import './app.scss'
 
 function App({ children }: { children: React.ReactNode }) {
-  const { setToken, setProfile, isLoggedIn } = useAuthStore()
+  const { setToken, setProfile } = useAuthStore()
 
   useEffect(() => {
     const token = Taro.getStorageSync('token') as string
@@ -14,12 +14,6 @@ function App({ children }: { children: React.ReactNode }) {
       if (profile) setProfile(profile)
     }
   }, [])
-
-  useEffect(() => {
-    if (!isLoggedIn()) {
-      Taro.reLaunch({ url: '/pages/login/index' })
-    }
-  }, [isLoggedIn()])
 
   return <>{children}</>
 }
