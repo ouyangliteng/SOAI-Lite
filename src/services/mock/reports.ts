@@ -20,6 +20,48 @@ const MOCK_REPORT: TrainingReport = {
     { joint: '上臂',  angle: 25,  normal: '15–30°',  status: 'normal'  },
     { joint: '前臂',  angle: 142, normal: '130–150°', status: 'normal' },
   ],
+  poseTrack: {
+    version: 1,
+    coordinateSystem: 'normalized',
+    pointLabels: {
+      head: '头部',
+      leftShoulder: '左肩',
+      rightShoulder: '右肩',
+      leftElbow: '左肘',
+      rightElbow: '右肘',
+      waist: '腰部',
+      leftKnee: '左腿',
+      rightKnee: '右腿',
+      leftHeel: '左脚跟',
+      rightHeel: '右脚跟',
+      leftToe: '左脚尖',
+      rightToe: '右脚尖',
+    },
+    frames: Array.from({ length: 18 }).map((_, index) => {
+      const phase = index / 17
+      const sway = Math.sin(phase * Math.PI * 2) * 0.018
+      return {
+        frameIndex: index + 1,
+        timeMs: index * 500,
+        confidence: 0.86,
+        visibilityQuality: 'usable',
+        points: {
+          head: { x: 0.54 + sway, y: 0.22, confidence: 0.88 },
+          leftShoulder: { x: 0.48 + sway, y: 0.36, confidence: 0.86 },
+          rightShoulder: { x: 0.58 + sway, y: 0.36, confidence: 0.86 },
+          leftElbow: { x: 0.43 + sway, y: 0.52, confidence: 0.8 },
+          rightElbow: { x: 0.55 + sway, y: 0.52, confidence: 0.8 },
+          waist: { x: 0.55 + sway, y: 0.66, confidence: 0.84 },
+          leftKnee: { x: 0.47 - sway, y: 0.82, confidence: 0.78 },
+          rightKnee: { x: 0.59 - sway, y: 0.82, confidence: 0.78 },
+          leftHeel: { x: 0.38 - sway, y: 0.94, confidence: 0.56, derived: true },
+          rightHeel: { x: 0.52 - sway, y: 0.94, confidence: 0.56, derived: true },
+          leftToe: { x: 0.5 - sway, y: 0.95, confidence: 0.56, derived: true },
+          rightToe: { x: 0.64 - sway, y: 0.95, confidence: 0.56, derived: true },
+        },
+      }
+    }),
+  },
   trackingFrames: 248,
   trackingConfidence: 94,
   problemPoints: ['左膝角度偏大，坐骨重心偏后', '收缰时手腕有轻微锁死'],

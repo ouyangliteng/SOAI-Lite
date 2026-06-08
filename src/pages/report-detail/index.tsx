@@ -1,13 +1,101 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Image, Video, Textarea } from '@tarojs/components'
+import { View, Text, Image, Video, Textarea, Canvas } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { reportService } from '../../services'
-import type { ReportFeedbackRole, TrainingReport } from '../../services/types'
+import type { PoseTrackFrame, PoseTrackPoint, ReportFeedbackRole, TrainingReport } from '../../services/types'
 import './index.scss'
 
 type NavTab = 'assessment' | 'risks' | 'improvements'
 const TAB_LABELS: Record<NavTab, string> = { assessment: '综合评价', risks: '安全提醒', improvements: '进步' }
 const FEEDBACK_TAGS = ['姿态判断不准', '角度数据偏差', '安全评价需修正', '视频角度影响', '教练已确认']
+const POSE_CANVAS_ID = 'poseTrackCanvas'
+const VIDEO_HEIGHT_RPX = 360
+const PAGE_PADDING_RPX = 28
+const POSE_POINT_KEYS = [
+  'head',
+  'leftShoulder',
+  'rightShoulder',
+  'leftElbow',
+  'rightElbow',
+  'waist',
+  'leftKnee',
+  'rightKnee',
+  'leftHeel',
+  'rightHeel',
+  'leftToe',
+  'rightToe',
+]
+const POSE_CONNECTIONS: [string, string][] = [
+  ['head', 'leftShoulder'],
+  ['head', 'rightShoulder'],
+  ['leftShoulder', 'rightShoulder'],
+  ['leftShoulder', 'leftElbow'],
+  ['rightShoulder', 'rightElbow'],
+  ['leftShoulder', 'waist'],
+  ['rightShoulder', 'waist'],
+  ['waist', 'leftKnee'],
+  ['waist', 'rightKnee'],
+  ['leftKnee', 'leftHeel'],
+  ['rightKnee', 'rightHeel'],
+  ['leftHeel', 'leftToe'],
+  ['rightHeel', 'rightToe'],
+]
+
+function getNearestTrackFrame(frames: PoseTrackFrame[], timeMs: number): PoseTrackFrame {
+  return frames.reduce((nearest, frame) => (
+    Math.abs(frame.timeMs - timeMs) < Math.abs(nearest.timeMs - timeMs) ? frame : nearest
+  ), frames[0])
+}
+
+function pointReady(point?: PoseTrackPoint) {
+  return point && point.confidence >= 0.18
+}
+
+function drawPoseTrack(report: TrainingReport, currentTimeSec: number) {
+  if (!report.videoVisibleToday || !report.videoUrl || !report.poseTrack?.frames?.length) return
+
+  const systemInfo = Taro.getSystemInfoSync()
+  const rpx = systemInfo.windowWidth / 750
+  const canvasWidth = systemInfo.windowWidth - PAGE_PADDING_RPX * 2 * rpx
+  const canvasHeight = VIDEO_HEIGHT_RPX * rpx
+  const frame = getNearestTrackFrame(report.poseTrack.frames, currentTimeSec * 1000)
+  const ctx = Taro.createCanvasContext(POSE_CANVAS_ID)
+
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight)
+  ctx.setLineCap('round')
+  ctx.setLineJoin('round')
+  ctx.setStrokeStyle('rgba(34, 240, 200, 0.72)')
+  ctx.setLineWidth(2)
+
+  POSE_CONNECTIONS.forEach(([fromKey, toKey]) => {
+    const from = frame.points[fromKey]
+    const to = frame.points[toKey]
+    if (!pointReady(from) || !pointReady(to)) return
+    ctx.beginPath()
+    ctx.moveTo(from.x * canvasWidth, from.y * canvasHeight)
+    ctx.lineTo(to.x * canvasWidth, to.y * canvasHeight)
+    ctx.stroke()
+  })
+
+  POSE_POINT_KEYS.forEach((key) => {
+    const point = frame.points[key]
+    if (!pointReady(point)) return
+    const x = point.x * canvasWidth
+    const y = point.y * canvasHeight
+    const radius = key.includes('Toe') || key.includes('Heel') ? 3.5 : 5
+    ctx.beginPath()
+    ctx.arc(x, y, radius, 0, Math.PI * 2)
+    ctx.setFillStyle(point.derived ? 'rgba(210, 153, 34, 0.92)' : 'rgba(34, 240, 200, 0.95)')
+    ctx.fill()
+    ctx.setStrokeStyle('rgba(255, 255, 255, 0.72)')
+    ctx.setLineWidth(1)
+    ctx.stroke()
+    ctx.setStrokeStyle('rgba(34, 240, 200, 0.72)')
+    ctx.setLineWidth(2)
+  })
+
+  ctx.draw()
+}
 
 export default function ReportDetailPage() {
   const router = useRouter()
@@ -24,6 +112,7 @@ export default function ReportDetailPage() {
   const [aiLearningConsent, setAiLearningConsent] = useState(true)
   const [submittingFeedback, setSubmittingFeedback] = useState(false)
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+  const [videoTimeSec, setVideoTimeSec] = useState(0)
 
   useEffect(() => {
     reportService.getReport(reportId)
@@ -33,6 +122,11 @@ export default function ReportDetailPage() {
         Taro.showToast({ title: '加载失败', icon: 'error' })
       })
   }, [reportId])
+
+  useEffect(() => {
+    if (!report) return
+    Taro.nextTick(() => drawPoseTrack(report, videoTimeSec))
+  }, [report, videoTimeSec])
 
   async function handleSaveScreenshot() {
     try {
@@ -130,13 +224,23 @@ export default function ReportDetailPage() {
           <Text className='video-expire-tag'>当天可看 · 次日删除</Text>
         </View>
         {report.videoVisibleToday && report.videoUrl ? (
-          <Video
-            src={report.videoUrl}
-            controls
-            showFullscreenBtn
-            initialTime={0}
-            className='training-video'
-          />
+          <View className='video-track-shell'>
+            <Video
+              src={report.videoUrl}
+              controls
+              showFullscreenBtn
+              initialTime={0}
+              className='training-video'
+              onTimeUpdate={(e) => setVideoTimeSec(e.detail.currentTime)}
+            />
+            {!!report.poseTrack?.frames?.length && (
+              <Canvas
+                canvasId={POSE_CANVAS_ID}
+                className='pose-track-canvas'
+                disableScroll
+              />
+            )}
+          </View>
         ) : (
           <View className='video-expired-placeholder'>
             <Text style={{ fontSize: '48rpx' }}>🎬</Text>
@@ -146,7 +250,7 @@ export default function ReportDetailPage() {
         )}
         <View className='video-meta-tags'>
           <View className='vmtag'>训练片段</View>
-          <View className='vmtag'>AI 精华截取</View>
+          <View className='vmtag'>{report.poseTrack?.frames?.length ? '姿态追踪' : '待生成追踪'}</View>
           <View className='vmtag'>150MB 以内</View>
         </View>
       </View>

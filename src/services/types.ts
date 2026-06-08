@@ -61,6 +61,28 @@ export interface JointAngle {
   status: 'normal' | 'warning' | 'error'
 }
 
+export interface PoseTrackPoint {
+  x: number
+  y: number
+  confidence: number
+  derived?: boolean
+}
+
+export interface PoseTrackFrame {
+  frameIndex: number
+  timeMs: number
+  confidence: number
+  visibilityQuality: 'usable' | 'low' | string
+  points: Record<string, PoseTrackPoint>
+}
+
+export interface PoseTrack {
+  version: number
+  coordinateSystem: 'normalized'
+  pointLabels: Record<string, string>
+  frames: PoseTrackFrame[]
+}
+
 export interface TrainingReport {
   id: string
   studentId: string
@@ -70,6 +92,7 @@ export interface TrainingReport {
   overallScore: number
   scores: ScoreDimensions
   jointAngles: JointAngle[]
+  poseTrack?: PoseTrack
   trackingFrames: number
   trackingConfidence: number
   problemPoints: string[]

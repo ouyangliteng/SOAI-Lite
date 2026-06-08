@@ -63,6 +63,7 @@ export async function getReport(reportId: string): Promise<TrainingReport> {
     overallScore: r.summary?.overallScore ?? 0,
     scores: r.scores,
     jointAngles: toJointAngles(r.ruleResults || []),
+    poseTrack: r.poseTrack,
     trackingFrames: r.poseSummary?.frameCount ?? 0,
     trackingConfidence: Math.round((r.poseSummary?.averageConfidence ?? 0) * 100),
     problemPoints: (r.problemPoints || []).map((p: any) => p.detail || p.title),
