@@ -1,0 +1,44 @@
+.analysis-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.ai-spinner {
+  width: 120rpx; height: 120rpx;
+  border-radius: 50%;
+  border: 6rpx solid #21262d;
+  border-top-color: #00b896;
+  animation: spin 1s linear infinite;
+  margin-bottom: 40rpx;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.analysis-title { font-size: 34rpx; font-weight: 700; color: #e6edf3; }
+.analysis-sub   { font-size: 26rpx; color: #8b949e; margin-top: 12rpx; }
+
+.progress-steps { margin-top: 48rpx; width: 100%; }
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #21262d;
+}
+.step-dot {
+  width: 20rpx; height: 20rpx; border-radius: 50%;
+  background: #21262d; flex-shrink: 0;
+}
+.step-dot-active { background: #00b896; box-shadow: 0 0 8rpx #00b896; }
+.step-dot-done   { background: #22f0c8; }
+.step-label      { font-size: 26rpx; color: #8b949e; }
+.step-label-active { color: #e6edf3; font-weight: 600; }
+
+.error-center {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 24rpx; padding: 60rpx 0;
+}
+.error-icon { font-size: 80rpx; }
