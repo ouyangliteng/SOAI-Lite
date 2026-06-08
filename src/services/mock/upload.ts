@@ -4,8 +4,19 @@ export async function getUploadToken(
 ): Promise<{ uploadUrl: string; videoId: string }> {
   await delay(300)
   return {
-    uploadUrl: 'https://mock-cos.example.com/upload',
+    uploadUrl: 'mock://local',
     videoId: `video_${Date.now()}`,
+  }
+}
+
+export async function doUpload(
+  _uploadUrl: string,
+  _filePath: string,
+  onProgress: (p: number) => void
+): Promise<void> {
+  for (let p = 0; p <= 100; p += 10) {
+    onProgress(p)
+    await delay(150)
   }
 }
 

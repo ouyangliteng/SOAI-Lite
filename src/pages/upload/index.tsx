@@ -45,16 +45,7 @@ export default function UploadPage() {
       setStage('uploading')
       setProgress(0)
       const { uploadUrl, videoId } = await uploadService.getUploadToken(file.name, file.size)
-      await new Promise<void>((resolve, reject) => {
-        const task = Taro.uploadFile({
-          url: uploadUrl,
-          filePath: file.path,
-          name: 'file',
-          success: () => resolve(),
-          fail: (e) => reject(new Error(e.errMsg)),
-        })
-        task.onProgressUpdate((p) => setProgress(p.progress))
-      })
+      await uploadService.doUpload(uploadUrl, file.path, setProgress)
       await uploadService.notifyUploaded(videoId)
       const analysisTask = await analysisService.createTask(videoId)
       setCurrentTaskId(analysisTask.id)

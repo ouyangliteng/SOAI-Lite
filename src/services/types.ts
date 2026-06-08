@@ -91,6 +91,7 @@ export interface AuthService {
 
 export interface UploadService {
   getUploadToken(filename: string, sizeBytes: number): Promise<{ uploadUrl: string; videoId: string }>
+  doUpload(uploadUrl: string, filePath: string, onProgress: (p: number) => void): Promise<void>
   notifyUploaded(videoId: string): Promise<void>
 }
 

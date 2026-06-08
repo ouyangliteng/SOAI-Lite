@@ -19,6 +19,24 @@ export async function getUploadToken(
   })
 }
 
+export async function doUpload(
+  uploadUrl: string,
+  filePath: string,
+  onProgress: (p: number) => void
+): Promise<void> {
+  const Taro = (await import('@tarojs/taro')).default
+  return new Promise((resolve, reject) => {
+    const task = Taro.uploadFile({
+      url: uploadUrl,
+      filePath,
+      name: 'file',
+      success: () => resolve(),
+      fail: (e: { errMsg: string }) => reject(new Error(e.errMsg)),
+    })
+    task.onProgressUpdate((p: { progress: number }) => onProgress(p.progress))
+  })
+}
+
 export async function notifyUploaded(videoId: string): Promise<void> {
   await request(`/upload/notify/${videoId}`, { method: 'POST' })
 }
