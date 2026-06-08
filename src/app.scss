@@ -1,1 +1,110 @@
-// Global styles for SOAI Lite
+/* ── Design Tokens ── */
+page {
+  min-height: 100%;
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: -apple-system, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ── Layout ── */
+.page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 28rpx 28rpx 100rpx;
+}
+
+/* ── Typography ── */
+.section-title {
+  margin: 34rpx 0 18rpx;
+  font-size: 31rpx;
+  font-weight: 700;
+  color: #e6edf3;
+}
+.muted { color: #8b949e; font-size: 25rpx; line-height: 1.5; }
+.small { color: #8b949e; font-size: 23rpx; }
+
+/* ── Card ── */
+.card {
+  margin-top: 20rpx;
+  padding: 28rpx;
+  border: 1rpx solid #21262d;
+  border-radius: 16rpx;
+  background: #161b22;
+}
+.card-title { font-size: 30rpx; font-weight: 700; color: #e6edf3; }
+
+/* ── Row ── */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  border-radius: 14rpx;
+  font-size: 29rpx;
+  font-weight: 700;
+}
+.btn-primary  { color: #fff; background: #00b896; }
+.btn-secondary{ color: #00b896; background: rgba(0, 184, 150, 0.15); }
+.btn-ghost    { color: #8b949e; background: #1c2128; }
+
+/* ── Tag ── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #00b896;
+  background: rgba(0, 184, 150, 0.15);
+}
+.tag-warn   { color: #d29922; background: rgba(210, 153, 34, 0.15); }
+.tag-danger { color: #f85149; background: rgba(248, 81, 73, 0.15); }
+
+/* ── Divider ── */
+.divider { height: 1rpx; margin: 24rpx 0; background: #21262d; }
+
+/* ── Input ── */
+.field { margin-top: 22rpx; }
+.field-label { margin-bottom: 10rpx; color: #8b949e; font-size: 25rpx; font-weight: 600; }
+.input {
+  height: 84rpx;
+  box-sizing: border-box;
+  padding: 0 22rpx;
+  border: 1rpx solid #21262d;
+  border-radius: 14rpx;
+  background: #161b22;
+  color: #e6edf3;
+  font-size: 28rpx;
+}
+
+/* ── Progress ── */
+.progress-track {
+  width: 100%;
+  height: 14rpx;
+  overflow: hidden;
+  border-radius: 999rpx;
+  background: #21262d;
+}
+.progress-bar {
+  height: 14rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #00b896, #22f0c8);
+}
+
+/* ── Score Big ── */
+.score-big {
+  font-size: 96rpx;
+  font-weight: 900;
+  color: #00b896;
+  line-height: 1;
+}
+.score-unit { font-size: 32rpx; color: #8b949e; margin-left: 8rpx; }
