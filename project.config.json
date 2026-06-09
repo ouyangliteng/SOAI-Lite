@@ -2,7 +2,7 @@
   "miniprogramRoot": "./dist",
   "projectname": "soai-lite",
   "description": "SOAI Lite WeChat Mini Program",
-  "appid": "touristappid",
+  "appid": "wx85e25dc803ceab29",
   "setting": {
     "urlCheck": true,
     "es6": false,
