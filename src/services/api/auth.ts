@@ -42,10 +42,31 @@ export async function verifyCode(
 
 export async function loginWithWx(
   code: string,
-  anonymousId: string
+  anonymousId: string,
+  userInfo: Partial<StudentProfile> = {}
 ): Promise<{ token: string; profile: StudentProfile }> {
   return request('/auth/wx-login', {
     method: 'POST',
-    body: { code, anonymousId },
+    body: { code, anonymousId, name: userInfo.name, avatarUrl: userInfo.avatarUrl },
   })
+}
+
+export async function getProfile(): Promise<StudentProfile> {
+  const data = await request<{ profile: StudentProfile }>('/student/profile')
+  return data.profile
+}
+
+export async function updateProfile(payload: Partial<StudentProfile>): Promise<StudentProfile> {
+  const data = await request<{ profile: StudentProfile }>('/student/profile', {
+    method: 'POST',
+    body: {
+      name: payload.name,
+      phone: payload.phone,
+      currentLevel: payload.currentLevel,
+      clubName: payload.clubName,
+      coachName: payload.coachName,
+      avatarUrl: payload.avatarUrl,
+    },
+  })
+  return data.profile
 }

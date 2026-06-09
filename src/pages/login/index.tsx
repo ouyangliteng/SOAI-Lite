@@ -13,9 +13,10 @@ export default function LoginPage() {
     if (loading) return
     try {
       setLoading(true)
+      const wxUserInfo = await getWxUserInfo().catch(() => null)
       const { code } = await Taro.login()
       const anonymousId = getOrCreateAnonymousId()
-      const { token, profile } = await authService.loginWithWx(code, anonymousId)
+      const { token, profile } = await authService.loginWithWx(code, anonymousId, wxUserInfo || undefined)
       Taro.setStorageSync('token', token)
       Taro.setStorageSync('profile', profile)
       setToken(token)
@@ -51,6 +52,16 @@ export default function LoginPage() {
       </View>
     </View>
   )
+}
+
+async function getWxUserInfo() {
+  const result = await Taro.getUserProfile({
+    desc: '用于在 SOAI 训练报告中显示微信昵称和头像',
+  })
+  return {
+    name: result.userInfo?.nickName || '',
+    avatarUrl: result.userInfo?.avatarUrl || '',
+  }
 }
 
 function getOrCreateAnonymousId() {

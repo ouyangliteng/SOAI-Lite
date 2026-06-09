@@ -11,7 +11,7 @@ export async function verifyInvite(inviteCode: string): Promise<{
   }
   const profile = {
     id: 'student_mock',
-    name: '内测学员',
+    name: '内测会员',
     phone: '',
     currentLevel: '初级进阶',
     analysisConsent: true,

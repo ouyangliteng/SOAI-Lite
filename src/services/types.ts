@@ -143,7 +143,9 @@ export interface ReportFeedbackPayload {
 export interface AuthService {
   sendCode(phone: string): Promise<void>
   verifyCode(phone: string, code: string): Promise<{ token: string; profile: StudentProfile }>
-  loginWithWx(code: string, anonymousId: string): Promise<{ token: string; profile: StudentProfile }>
+  loginWithWx(code: string, anonymousId: string, userInfo?: Partial<StudentProfile>): Promise<{ token: string; profile: StudentProfile }>
+  getProfile(): Promise<StudentProfile>
+  updateProfile(payload: Partial<StudentProfile>): Promise<StudentProfile>
 }
 
 export interface UploadService {

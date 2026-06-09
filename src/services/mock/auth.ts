@@ -27,19 +27,52 @@ export async function verifyCode(
 
 export async function loginWithWx(
   _code: string,
-  anonymousId = 'mock'
+  anonymousId = 'mock',
+  userInfo: Partial<import('../types').StudentProfile> = {}
 ): Promise<{ token: string; profile: import('../types').StudentProfile }> {
   await delay(600)
   return {
     token: `mock_wx_jwt_${Date.now()}`,
     profile: {
       id: `student_mock_${anonymousId}`,
-      name: '微信用户',
+      name: userInfo.name || '内测会员',
       phone: '',
       currentLevel: '初级骑手',
+      avatarUrl: userInfo.avatarUrl || '',
       analysisConsent: true,
       caseConsent: false,
     },
+  }
+}
+
+export async function getProfile(): Promise<import('../types').StudentProfile> {
+  await delay(120)
+  return {
+    id: 'student_mock',
+    name: '内测会员',
+    phone: '',
+    currentLevel: '初级进阶',
+    clubName: '',
+    coachName: '',
+    analysisConsent: true,
+    caseConsent: false,
+  }
+}
+
+export async function updateProfile(
+  payload: Partial<import('../types').StudentProfile>
+): Promise<import('../types').StudentProfile> {
+  await delay(200)
+  return {
+    id: 'student_mock',
+    name: payload.name || '内测会员',
+    phone: payload.phone || '',
+    currentLevel: payload.currentLevel || '初级进阶',
+    clubName: payload.clubName || '',
+    coachName: payload.coachName || '',
+    avatarUrl: payload.avatarUrl || '',
+    analysisConsent: true,
+    caseConsent: false,
   }
 }
 
