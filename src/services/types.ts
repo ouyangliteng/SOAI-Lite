@@ -83,6 +83,8 @@ export interface PoseTrackPoint {
 export interface PoseTrackFrame {
   frameIndex: number
   timeMs: number
+  sourceWidth?: number
+  sourceHeight?: number
   confidence: number
   visibilityQuality: 'usable' | 'low' | string
   points: Record<string, PoseTrackPoint>

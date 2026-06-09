@@ -60,12 +60,16 @@ function getDisplayPoints(frame: PoseTrackFrame): DisplayPointMap {
   }
 }
 
-function getVideoContentRect(canvasWidth: number, canvasHeight: number, videoMeta: VideoMeta): ContentRect {
-  if (!videoMeta?.width || !videoMeta?.height) {
-    return { x: 0, y: 0, width: canvasWidth, height: canvasHeight }
-  }
+function getFrameVideoMeta(frame?: PoseTrackFrame): VideoMeta {
+  if (!frame?.sourceWidth || !frame?.sourceHeight) return null
+  return { width: Number(frame.sourceWidth), height: Number(frame.sourceHeight) }
+}
 
-  const videoRatio = videoMeta.width / videoMeta.height
+function getVideoContentRect(canvasWidth: number, canvasHeight: number, videoMeta: VideoMeta, frameMeta: VideoMeta): ContentRect | null {
+  const effectiveMeta = videoMeta?.width && videoMeta?.height ? videoMeta : frameMeta
+  if (!effectiveMeta?.width || !effectiveMeta?.height) return null
+
+  const videoRatio = effectiveMeta.width / effectiveMeta.height
   const canvasRatio = canvasWidth / canvasHeight
 
   if (videoRatio > canvasRatio) {
@@ -101,16 +105,20 @@ function drawPoseTrack(report: TrainingReport, currentTimeSec: number, videoMeta
   const rpx = systemInfo.windowWidth / 750
   const canvasWidth = systemInfo.windowWidth - PAGE_PADDING_RPX * 2 * rpx
   const canvasHeight = VIDEO_HEIGHT_RPX * rpx
-  const contentRect = getVideoContentRect(canvasWidth, canvasHeight, videoMeta)
   const frame = getNearestTrackFrame(report.poseTrack.frames, currentTimeSec * 1000)
+  const contentRect = getVideoContentRect(canvasWidth, canvasHeight, videoMeta, getFrameVideoMeta(frame))
   const displayPoints = getDisplayPoints(frame)
   const ctx = Taro.createCanvasContext(POSE_CANVAS_ID)
 
   ctx.clearRect(0, 0, canvasWidth, canvasHeight)
+  if (!contentRect) {
+    ctx.draw()
+    return
+  }
   ctx.setLineCap('round')
   ctx.setLineJoin('round')
-  ctx.setStrokeStyle('rgba(34, 240, 200, 0.62)')
-  ctx.setLineWidth(1.5)
+  ctx.setStrokeStyle('rgba(34, 240, 200, 0.42)')
+  ctx.setLineWidth(1.1)
 
   POSE_CONNECTIONS.forEach(([fromKey, toKey]) => {
     const from = displayPoints[fromKey as DisplayPointKey]
@@ -128,16 +136,16 @@ function drawPoseTrack(report: TrainingReport, currentTimeSec: number, videoMeta
     const point = displayPoints[key]
     if (!pointReady(point)) return
     const { x, y } = mapPoint(point, contentRect)
-    const radius = key === 'toe' || key === 'heel' ? 3 : 4
+    const radius = key === 'toe' || key === 'heel' ? 2.4 : 3.1
     ctx.beginPath()
     ctx.arc(x, y, radius, 0, Math.PI * 2)
-    ctx.setFillStyle(point.derived ? 'rgba(210, 153, 34, 0.92)' : 'rgba(34, 240, 200, 0.95)')
+    ctx.setFillStyle(point.derived ? 'rgba(210, 153, 34, 0.78)' : 'rgba(34, 240, 200, 0.82)')
     ctx.fill()
-    ctx.setStrokeStyle('rgba(255, 255, 255, 0.62)')
-    ctx.setLineWidth(1)
+    ctx.setStrokeStyle('rgba(255, 255, 255, 0.5)')
+    ctx.setLineWidth(0.8)
     ctx.stroke()
-    ctx.setStrokeStyle('rgba(34, 240, 200, 0.62)')
-    ctx.setLineWidth(1.5)
+    ctx.setStrokeStyle('rgba(34, 240, 200, 0.42)')
+    ctx.setLineWidth(1.1)
   })
 
   ctx.draw()
