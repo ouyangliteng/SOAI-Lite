@@ -11,35 +11,17 @@ const FEEDBACK_TAGS = ['姿态判断不准', '角度数据偏差', '安全评价
 const POSE_CANVAS_ID = 'poseTrackCanvas'
 const VIDEO_HEIGHT_RPX = 360
 const PAGE_PADDING_RPX = 28
-const POSE_POINT_KEYS = [
-  'head',
-  'leftShoulder',
-  'rightShoulder',
-  'leftElbow',
-  'rightElbow',
-  'waist',
-  'leftKnee',
-  'rightKnee',
-  'leftHeel',
-  'rightHeel',
-  'leftToe',
-  'rightToe',
-]
+const DISPLAY_POINT_KEYS = ['head', 'shoulder', 'elbow', 'waist', 'knee', 'heel', 'toe'] as const
 const POSE_CONNECTIONS: [string, string][] = [
-  ['head', 'leftShoulder'],
-  ['head', 'rightShoulder'],
-  ['leftShoulder', 'rightShoulder'],
-  ['leftShoulder', 'leftElbow'],
-  ['rightShoulder', 'rightElbow'],
-  ['leftShoulder', 'waist'],
-  ['rightShoulder', 'waist'],
-  ['waist', 'leftKnee'],
-  ['waist', 'rightKnee'],
-  ['leftKnee', 'leftHeel'],
-  ['rightKnee', 'rightHeel'],
-  ['leftHeel', 'leftToe'],
-  ['rightHeel', 'rightToe'],
+  ['head', 'shoulder'],
+  ['shoulder', 'elbow'],
+  ['shoulder', 'waist'],
+  ['waist', 'knee'],
+  ['knee', 'heel'],
+  ['heel', 'toe'],
 ]
+type DisplayPointKey = typeof DISPLAY_POINT_KEYS[number]
+type DisplayPointMap = Record<DisplayPointKey, PoseTrackPoint | undefined>
 
 function getNearestTrackFrame(frames: PoseTrackFrame[], timeMs: number): PoseTrackFrame {
   return frames.reduce((nearest, frame) => (
@@ -51,6 +33,31 @@ function pointReady(point?: PoseTrackPoint) {
   return point && point.confidence >= 0.18
 }
 
+function averagePoint(points: Array<PoseTrackPoint | undefined>): PoseTrackPoint | undefined {
+  const readyPoints = points.filter(pointReady) as PoseTrackPoint[]
+  if (!readyPoints.length) return undefined
+  const confidence = readyPoints.reduce((sum, point) => sum + point.confidence, 0) / readyPoints.length
+  return {
+    x: readyPoints.reduce((sum, point) => sum + point.x, 0) / readyPoints.length,
+    y: readyPoints.reduce((sum, point) => sum + point.y, 0) / readyPoints.length,
+    confidence,
+    derived: readyPoints.some(point => point.derived),
+  }
+}
+
+function getDisplayPoints(frame: PoseTrackFrame): DisplayPointMap {
+  const p = frame.points
+  return {
+    head: p.head,
+    shoulder: averagePoint([p.leftShoulder, p.rightShoulder]),
+    elbow: averagePoint([p.leftElbow, p.rightElbow]),
+    waist: p.waist,
+    knee: averagePoint([p.leftKnee, p.rightKnee]),
+    heel: averagePoint([p.leftHeel, p.rightHeel]),
+    toe: averagePoint([p.leftToe, p.rightToe]),
+  }
+}
+
 function drawPoseTrack(report: TrainingReport, currentTimeSec: number) {
   if (!shouldShowPoseOverlay(report)) return
 
@@ -59,17 +66,18 @@ function drawPoseTrack(report: TrainingReport, currentTimeSec: number) {
   const canvasWidth = systemInfo.windowWidth - PAGE_PADDING_RPX * 2 * rpx
   const canvasHeight = VIDEO_HEIGHT_RPX * rpx
   const frame = getNearestTrackFrame(report.poseTrack.frames, currentTimeSec * 1000)
+  const displayPoints = getDisplayPoints(frame)
   const ctx = Taro.createCanvasContext(POSE_CANVAS_ID)
 
   ctx.clearRect(0, 0, canvasWidth, canvasHeight)
   ctx.setLineCap('round')
   ctx.setLineJoin('round')
-  ctx.setStrokeStyle('rgba(34, 240, 200, 0.72)')
-  ctx.setLineWidth(2)
+  ctx.setStrokeStyle('rgba(34, 240, 200, 0.62)')
+  ctx.setLineWidth(1.5)
 
   POSE_CONNECTIONS.forEach(([fromKey, toKey]) => {
-    const from = frame.points[fromKey]
-    const to = frame.points[toKey]
+    const from = displayPoints[fromKey as DisplayPointKey]
+    const to = displayPoints[toKey as DisplayPointKey]
     if (!pointReady(from) || !pointReady(to)) return
     ctx.beginPath()
     ctx.moveTo(from.x * canvasWidth, from.y * canvasHeight)
@@ -77,21 +85,21 @@ function drawPoseTrack(report: TrainingReport, currentTimeSec: number) {
     ctx.stroke()
   })
 
-  POSE_POINT_KEYS.forEach((key) => {
-    const point = frame.points[key]
+  DISPLAY_POINT_KEYS.forEach((key) => {
+    const point = displayPoints[key]
     if (!pointReady(point)) return
     const x = point.x * canvasWidth
     const y = point.y * canvasHeight
-    const radius = key.includes('Toe') || key.includes('Heel') ? 3.5 : 5
+    const radius = key === 'toe' || key === 'heel' ? 3 : 4
     ctx.beginPath()
     ctx.arc(x, y, radius, 0, Math.PI * 2)
     ctx.setFillStyle(point.derived ? 'rgba(210, 153, 34, 0.92)' : 'rgba(34, 240, 200, 0.95)')
     ctx.fill()
-    ctx.setStrokeStyle('rgba(255, 255, 255, 0.72)')
+    ctx.setStrokeStyle('rgba(255, 255, 255, 0.62)')
     ctx.setLineWidth(1)
     ctx.stroke()
-    ctx.setStrokeStyle('rgba(34, 240, 200, 0.72)')
-    ctx.setLineWidth(2)
+    ctx.setStrokeStyle('rgba(34, 240, 200, 0.62)')
+    ctx.setLineWidth(1.5)
   })
 
   ctx.draw()
