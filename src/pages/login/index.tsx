@@ -32,11 +32,13 @@ export default function LoginPage() {
   return (
     <View className='lp'>
       <View className='lp-top'>
-        <Image
-          className='lp-logo'
-          src='/assets/login-soai-logo.png'
-          mode='widthFix'
-        />
+        <View className='lp-logo-stage'>
+          <Image
+            className='lp-logo'
+            src='/assets/login-soai-logo.png'
+            mode='widthFix'
+          />
+        </View>
         <View className='lp-sub'>马术姿态 AI 评估</View>
         <View className='lp-tagline'>SOAI-EQ训练平台</View>
       </View>

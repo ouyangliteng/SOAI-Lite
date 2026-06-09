@@ -3,7 +3,11 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: #0d1117;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(170deg, rgba(0, 216, 232, 0.08) 0%, rgba(13, 17, 23, 0) 34%),
+    linear-gradient(180deg, #050d16 0%, #0d1117 48%, #070a10 100%);
   padding: 0 56rpx 80rpx;
 }
 
@@ -11,11 +15,31 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 80rpx;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 76rpx;
+}
+
+.lp-logo-stage {
+  width: 640rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18rpx 20rpx 20rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1rpx solid rgba(0, 216, 232, 0.28);
+  border-radius: 12rpx;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(5, 13, 22, 0.02)),
+    rgba(5, 13, 22, 0.56);
+  box-shadow:
+    0 30rpx 90rpx rgba(0, 0, 0, 0.42),
+    0 14rpx 46rpx rgba(0, 216, 232, 0.12),
+    inset 0 -1rpx 0 rgba(0, 216, 232, 0.24);
 }
 
 .lp-logo {
-  width: 560rpx;
+  width: 600rpx;
   display: block;
 }
 
@@ -23,7 +47,8 @@
   font-size: 28rpx;
   color: #e6edf3;
   font-weight: 600;
-  margin-top: 28rpx;
+  margin-top: 34rpx;
+  text-shadow: 0 2rpx 20rpx rgba(0, 216, 232, 0.24);
 }
 
 .lp-tagline {
@@ -37,6 +62,8 @@
   flex-direction: column;
   align-items: center;
   gap: 28rpx;
+  position: relative;
+  z-index: 1;
 }
 
 .lp-wx-btn {
