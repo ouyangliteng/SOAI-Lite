@@ -22,6 +22,8 @@ const POSE_CONNECTIONS: [string, string][] = [
 ]
 type DisplayPointKey = typeof DISPLAY_POINT_KEYS[number]
 type DisplayPointMap = Record<DisplayPointKey, PoseTrackPoint | undefined>
+type VideoMeta = { width: number; height: number } | null
+type ContentRect = { x: number; y: number; width: number; height: number }
 
 function getNearestTrackFrame(frames: PoseTrackFrame[], timeMs: number): PoseTrackFrame {
   return frames.reduce((nearest, frame) => (
@@ -58,13 +60,48 @@ function getDisplayPoints(frame: PoseTrackFrame): DisplayPointMap {
   }
 }
 
-function drawPoseTrack(report: TrainingReport, currentTimeSec: number) {
+function getVideoContentRect(canvasWidth: number, canvasHeight: number, videoMeta: VideoMeta): ContentRect {
+  if (!videoMeta?.width || !videoMeta?.height) {
+    return { x: 0, y: 0, width: canvasWidth, height: canvasHeight }
+  }
+
+  const videoRatio = videoMeta.width / videoMeta.height
+  const canvasRatio = canvasWidth / canvasHeight
+
+  if (videoRatio > canvasRatio) {
+    const height = canvasWidth / videoRatio
+    return {
+      x: 0,
+      y: (canvasHeight - height) / 2,
+      width: canvasWidth,
+      height,
+    }
+  }
+
+  const width = canvasHeight * videoRatio
+  return {
+    x: (canvasWidth - width) / 2,
+    y: 0,
+    width,
+    height: canvasHeight,
+  }
+}
+
+function mapPoint(point: PoseTrackPoint, rect: ContentRect) {
+  return {
+    x: rect.x + point.x * rect.width,
+    y: rect.y + point.y * rect.height,
+  }
+}
+
+function drawPoseTrack(report: TrainingReport, currentTimeSec: number, videoMeta: VideoMeta) {
   if (!shouldShowPoseOverlay(report)) return
 
   const systemInfo = Taro.getSystemInfoSync()
   const rpx = systemInfo.windowWidth / 750
   const canvasWidth = systemInfo.windowWidth - PAGE_PADDING_RPX * 2 * rpx
   const canvasHeight = VIDEO_HEIGHT_RPX * rpx
+  const contentRect = getVideoContentRect(canvasWidth, canvasHeight, videoMeta)
   const frame = getNearestTrackFrame(report.poseTrack.frames, currentTimeSec * 1000)
   const displayPoints = getDisplayPoints(frame)
   const ctx = Taro.createCanvasContext(POSE_CANVAS_ID)
@@ -79,17 +116,18 @@ function drawPoseTrack(report: TrainingReport, currentTimeSec: number) {
     const from = displayPoints[fromKey as DisplayPointKey]
     const to = displayPoints[toKey as DisplayPointKey]
     if (!pointReady(from) || !pointReady(to)) return
+    const fromPos = mapPoint(from, contentRect)
+    const toPos = mapPoint(to, contentRect)
     ctx.beginPath()
-    ctx.moveTo(from.x * canvasWidth, from.y * canvasHeight)
-    ctx.lineTo(to.x * canvasWidth, to.y * canvasHeight)
+    ctx.moveTo(fromPos.x, fromPos.y)
+    ctx.lineTo(toPos.x, toPos.y)
     ctx.stroke()
   })
 
   DISPLAY_POINT_KEYS.forEach((key) => {
     const point = displayPoints[key]
     if (!pointReady(point)) return
-    const x = point.x * canvasWidth
-    const y = point.y * canvasHeight
+    const { x, y } = mapPoint(point, contentRect)
     const radius = key === 'toe' || key === 'heel' ? 3 : 4
     ctx.beginPath()
     ctx.arc(x, y, radius, 0, Math.PI * 2)
@@ -130,6 +168,7 @@ export default function ReportDetailPage() {
   const [submittingFeedback, setSubmittingFeedback] = useState(false)
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const [videoTimeSec, setVideoTimeSec] = useState(0)
+  const [videoMeta, setVideoMeta] = useState<VideoMeta>(null)
 
   useEffect(() => {
     reportService.getReport(reportId)
@@ -142,8 +181,8 @@ export default function ReportDetailPage() {
 
   useEffect(() => {
     if (!report) return
-    Taro.nextTick(() => drawPoseTrack(report, videoTimeSec))
-  }, [report, videoTimeSec])
+    Taro.nextTick(() => drawPoseTrack(report, videoTimeSec, videoMeta))
+  }, [report, videoTimeSec, videoMeta])
 
   async function handleSaveScreenshot() {
     try {
@@ -258,8 +297,13 @@ export default function ReportDetailPage() {
               controls
               showFullscreenBtn
               initialTime={0}
+              objectFit='contain'
               className='training-video'
               onTimeUpdate={(e) => setVideoTimeSec(e.detail.currentTime)}
+              onLoadedMetaData={(e) => setVideoMeta({
+                width: Number(e.detail.width || 0),
+                height: Number(e.detail.height || 0),
+              })}
             />
             {shouldShowPoseOverlay(report) && (
               <Canvas
