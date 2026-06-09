@@ -1,3 +1,44 @@
+/* 页面框架 */
+.report-detail-page {
+  min-height: 100vh;
+  background: #0d1117;
+  padding-bottom: calc(190rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.report-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22rpx 28rpx 0;
+}
+
+.report-back-home {
+  height: 58rpx;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  background: rgba(0, 184, 150, 0.14);
+  color: #22f0c8;
+  font-size: 24rpx;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+}
+
+.report-page-title {
+  color: #c9d1d9;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.report-score-section {
+  padding: 18rpx 28rpx 0;
+}
+
+.report-content-section {
+  padding: 0 28rpx 190rpx;
+}
+
 /* 视频回放区 */
 .video-section { background: #0d1117; padding: 20rpx 28rpx 16rpx; }
 .video-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14rpx; }
@@ -275,4 +316,9 @@
   font-size: 30rpx;
   font-weight: 700;
   margin-top: 40rpx;
+}
+
+.report-bottom-actions {
+  margin-top: 24rpx;
+  padding-bottom: 52rpx;
 }

@@ -70,7 +70,7 @@ export default function HomePage() {
   }
 
   return (
-    <View className='page'>
+    <View className='page home-page'>
       {/* 用户卡 → 我的 */}
       <View className='card' style={{ cursor: 'pointer' }} onClick={() => Taro.switchTab({ url: '/pages/profile/index' })}>
         <View className='row'>
@@ -171,7 +171,7 @@ export default function HomePage() {
 
       <View className='section-title'>最近报告</View>
       {latestReport ? (
-        <View className='card'>
+        <View className='card home-latest-report'>
           <View className='row'>
             <View>
               <Text className='score-big'>{latestReport.overallScore}</Text>
@@ -188,7 +188,7 @@ export default function HomePage() {
             风险点 {latestReport.riskCount} 项 <Text style={{ color: '#00b896', marginLeft: '8rpx' }}>› 查看风险评估</Text>
           </View>
           <View
-            className='btn btn-ghost'
+            className='btn btn-secondary'
             style={{ marginTop: '24rpx' }}
             onClick={goReport}
           >

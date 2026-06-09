@@ -1,3 +1,7 @@
+.home-page {
+  padding-bottom: calc(210rpx + env(safe-area-inset-bottom));
+}
+
 .home-avatar {
   width: 88rpx;
   height: 88rpx;
@@ -88,6 +92,10 @@
 .stat-label { font-size: 22rpx; color: #8b949e; margin-top: 6rpx; }
 
 .risk-tap { display: flex; align-items: center; }
+
+.home-latest-report {
+  margin-bottom: 56rpx;
+}
 
 .task-dot {
   width: 16rpx;

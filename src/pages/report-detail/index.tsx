@@ -191,6 +191,12 @@ export default function ReportDetailPage() {
     }
   }
 
+  function goHome() {
+    Taro.switchTab({ url: '/pages/home/index' }).catch(() => {
+      Taro.reLaunch({ url: '/pages/home/index' })
+    })
+  }
+
   if (loading) {
     return (
       <View className='page' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
@@ -217,9 +223,14 @@ export default function ReportDetailPage() {
     ]
 
   return (
-    <View>
+    <View className='report-detail-page'>
+      <View className='report-page-header'>
+        <View className='report-back-home' onClick={goHome}>‹ 返回首页</View>
+        <Text className='report-page-title'>完整报告</Text>
+      </View>
+
       {/* 得分头部 */}
-      <View style={{ padding: '28rpx 28rpx 0' }}>
+      <View className='report-score-section'>
         <View className='card'>
           <View className='row'>
             <View>
@@ -326,7 +337,7 @@ export default function ReportDetailPage() {
       </View>
 
       {/* 内容 Tab */}
-      <View style={{ padding: '0 28rpx 100rpx' }}>
+      <View className='report-content-section'>
         <View className='report-nav'>
           {(Object.keys(TAB_LABELS) as NavTab[]).map(tab => (
             <View
@@ -468,6 +479,10 @@ export default function ReportDetailPage() {
         <View className='save-btn' onClick={handleSaveScreenshot}>
           <Text>📥</Text>
           <Text>保存报告截图到相册</Text>
+        </View>
+
+        <View className='report-bottom-actions'>
+          <View className='btn btn-secondary' onClick={goHome}>返回首页</View>
         </View>
       </View>
     </View>
