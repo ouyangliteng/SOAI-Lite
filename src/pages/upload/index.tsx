@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { View, Text } from '@tarojs/components'
+import { View, Text, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { uploadService, analysisService } from '../../services'
 import type { UploadQuota } from '../../services/types'
 import { useAuthStore } from '../../store/authStore'
+import landscapePoseGuide from '../../assets/upload-landscape-pose-guide.jpg'
 import './index.scss'
 
 const MAX_SIZE = 150 * 1024 * 1024
@@ -124,23 +125,12 @@ export default function UploadPage() {
               <View className='phone-speaker' />
               <View className='phone-camera' />
               <View className='phone-screen'>
-                <View className='center-frame' />
-                <View className='track-line' />
-                <View className='virtual-rider'>
-                  <View className='virtual-head' />
-                  <View className='virtual-torso' />
-                  <View className='virtual-arm' />
-                  <View className='virtual-seat' />
-                  <View className='virtual-thigh' />
-                  <View className='virtual-calf' />
-                </View>
-                <View className='rider-line rider-line-head' />
-                <View className='rider-line rider-line-body' />
-                <View className='rider-line rider-line-leg' />
-                <View className='rider-point rider-point-head' />
-                <View className='rider-point rider-point-shoulder' />
-                <View className='rider-point rider-point-hip' />
-                <View className='rider-point rider-point-foot' />
+                <Image
+                  className='guide-pose-image'
+                  src={landscapePoseGuide}
+                  mode='aspectFill'
+                />
+                <View className='screen-glass' />
               </View>
             </View>
             <View className='guide-copy'>
