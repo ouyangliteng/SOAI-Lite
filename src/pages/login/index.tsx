@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text } from '@tarojs/components'
+import { View, Text, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useAuthStore } from '../../store/authStore'
 import { authService } from '../../services'
@@ -32,9 +32,13 @@ export default function LoginPage() {
   return (
     <View className='lp'>
       <View className='lp-top'>
-        <View className='lp-logo'>SOAI</View>
+        <Image
+          className='lp-logo'
+          src='/assets/login-soai-logo.png'
+          mode='widthFix'
+        />
         <View className='lp-sub'>马术姿态 AI 评估</View>
-        <View className='lp-tagline'>专业骑手训练分析平台</View>
+        <View className='lp-tagline'>SOAI-EQ训练平台</View>
       </View>
 
       <View className='lp-body'>
