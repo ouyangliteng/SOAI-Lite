@@ -120,9 +120,20 @@ export default function UploadPage() {
         <>
           <View className='landscape-guide'>
             <View className='landscape-phone'>
+              <View className='phone-side-key' />
+              <View className='phone-speaker' />
               <View className='phone-camera' />
               <View className='phone-screen'>
+                <View className='center-frame' />
                 <View className='track-line' />
+                <View className='virtual-rider'>
+                  <View className='virtual-head' />
+                  <View className='virtual-torso' />
+                  <View className='virtual-arm' />
+                  <View className='virtual-seat' />
+                  <View className='virtual-thigh' />
+                  <View className='virtual-calf' />
+                </View>
                 <View className='rider-line rider-line-head' />
                 <View className='rider-line rider-line-body' />
                 <View className='rider-line rider-line-leg' />
@@ -135,7 +146,7 @@ export default function UploadPage() {
             <View className='guide-copy'>
               <Text className='guide-title'>建议横屏录制</Text>
               <Text className='guide-text'>
-                横屏采集的视频动态捕捉更准确，AI 判断更清晰，训练结论也会更稳定、准确。
+                横屏采集并尽量让主体人物居中录制，视频动态捕捉更准确，AI 判断更清晰，训练结论也会更稳定、准确。
               </Text>
             </View>
           </View>
