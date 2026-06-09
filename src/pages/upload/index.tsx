@@ -117,13 +117,37 @@ export default function UploadPage() {
       )}
 
       {inviteVerified && (stage === 'idle' || stage === 'selected') && (
-        <View className='upload-zone' onClick={handleChoose}>
-          <Text className='upload-icon'>🎬</Text>
-          <Text className='upload-tip'>
-            {stage === 'idle' ? '点击选择训练视频' : '已选择，点击重新选择'}
-          </Text>
-          <Text className='upload-tip' style={{ fontSize: '22rpx' }}>真实姿态识别测试 · 15 秒内 · 150MB 以内</Text>
-        </View>
+        <>
+          <View className='landscape-guide'>
+            <View className='landscape-phone'>
+              <View className='phone-camera' />
+              <View className='phone-screen'>
+                <View className='track-line' />
+                <View className='rider-line rider-line-head' />
+                <View className='rider-line rider-line-body' />
+                <View className='rider-line rider-line-leg' />
+                <View className='rider-point rider-point-head' />
+                <View className='rider-point rider-point-shoulder' />
+                <View className='rider-point rider-point-hip' />
+                <View className='rider-point rider-point-foot' />
+              </View>
+            </View>
+            <View className='guide-copy'>
+              <Text className='guide-title'>建议横屏录制</Text>
+              <Text className='guide-text'>
+                横屏采集的视频动态捕捉更准确，AI 判断更清晰，训练结论也会更稳定、准确。
+              </Text>
+            </View>
+          </View>
+
+          <View className='upload-zone' onClick={handleChoose}>
+            <Text className='upload-icon'>🎬</Text>
+            <Text className='upload-tip'>
+              {stage === 'idle' ? '点击选择训练视频' : '已选择，点击重新选择'}
+            </Text>
+            <Text className='upload-tip' style={{ fontSize: '22rpx' }}>真实姿态识别测试 · 15 秒内 · 150MB 以内</Text>
+          </View>
+        </>
       )}
 
       {file && (
