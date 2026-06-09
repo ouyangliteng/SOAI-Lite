@@ -128,7 +128,7 @@ export default function UploadPage() {
                 <Image
                   className='guide-pose-image'
                   src={landscapePoseGuide}
-                  mode='aspectFill'
+                  mode='aspectFit'
                 />
                 <View className='screen-glass' />
               </View>
