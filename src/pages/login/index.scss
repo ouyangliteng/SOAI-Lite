@@ -92,3 +92,15 @@
   line-height: 1.6;
   padding: 0 24rpx;
 }
+
+.lp-version {
+  position: absolute;
+  left: 56rpx;
+  right: 56rpx;
+  bottom: 34rpx;
+  z-index: 1;
+  font-size: 22rpx;
+  color: rgba(139, 148, 158, 0.72);
+  text-align: center;
+  line-height: 1.4;
+}

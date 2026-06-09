@@ -40,7 +40,7 @@ export default function LoginPage() {
           />
         </View>
         <View className='lp-sub'>马术姿态 AI 评估</View>
-        <View className='lp-tagline'>SOAI-EQ训练平台</View>
+        <View className='lp-tagline'>SOAI-EQ专业分析平台</View>
       </View>
 
       <View className='lp-body'>
@@ -56,6 +56,8 @@ export default function LoginPage() {
           登录即同意《隐私说明》与视频分析授权
         </View>
       </View>
+
+      <View className='lp-version'>内测版SOAI-EQ 1.0</View>
     </View>
   )
 }
