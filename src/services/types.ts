@@ -8,6 +8,8 @@ export interface StudentProfile {
   clubName?: string
   analysisConsent: boolean
   caseConsent: boolean
+  inviteStatus?: 'verified' | string
+  inviteVerifiedAt?: string
 }
 
 export type UploadStatus = 'selected' | 'validating' | 'uploading' | 'uploaded' | 'failed'
@@ -28,6 +30,14 @@ export interface UploadQuota {
   used: number
   remaining: number
   date: string
+}
+
+export interface InviteAccess {
+  required: boolean
+  verified: boolean
+  verifiedAt: string
+  maxUsers: number
+  acceptedUsers: number
 }
 
 export type AnalysisStatus =

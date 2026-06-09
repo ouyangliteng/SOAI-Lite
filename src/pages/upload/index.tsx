@@ -3,6 +3,7 @@ import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { uploadService, analysisService } from '../../services'
 import type { UploadQuota } from '../../services/types'
+import { useAuthStore } from '../../store/authStore'
 import './index.scss'
 
 const MAX_SIZE = 150 * 1024 * 1024
@@ -11,6 +12,7 @@ const MAX_DURATION_SEC = 15
 type Stage = 'idle' | 'selected' | 'uploading' | 'done' | 'error'
 
 export default function UploadPage() {
+  const { profile } = useAuthStore()
   const [stage, setStage] = useState<Stage>('idle')
   const [file, setFile] = useState<{ path: string; name: string; size: number; duration: number } | null>(null)
   const [progress, setProgress] = useState(0)
@@ -24,7 +26,13 @@ export default function UploadPage() {
       .catch(() => {})
   }, [])
 
+  const inviteVerified = Boolean(profile?.inviteVerifiedAt)
+
   async function handleChoose() {
+    if (!inviteVerified) {
+      Taro.showToast({ title: '请先在首页输入内测邀请码', icon: 'none' })
+      return
+    }
     try {
       const res = await Taro.chooseMedia({
         count: 1,
@@ -49,6 +57,10 @@ export default function UploadPage() {
   }
 
   async function handleUpload() {
+    if (!inviteVerified) {
+      Taro.showToast({ title: '请先在首页输入内测邀请码', icon: 'none' })
+      return
+    }
     if (quota && quota.remaining <= 0) {
       Taro.showToast({ title: '今天已达到 3 次上传上限', icon: 'none' })
       return
@@ -83,6 +95,20 @@ export default function UploadPage() {
 
   return (
       <View className='page'>
+      {!inviteVerified && (
+        <View className='invite-lock'>
+          <View className='file-name'>内测邀请码未通过</View>
+          <View className='file-meta'>请返回首页输入邀请码后，再上传真实姿态识别测试视频。</View>
+          <View
+            className='btn btn-secondary'
+            style={{ marginTop: '20rpx' }}
+            onClick={() => Taro.switchTab({ url: '/pages/home/index' })}
+          >
+            返回首页验证
+          </View>
+        </View>
+      )}
+
       {quota && (
         <View className='file-info'>
           <View className='file-name'>今日剩余分析次数</View>
@@ -90,7 +116,7 @@ export default function UploadPage() {
         </View>
       )}
 
-      {(stage === 'idle' || stage === 'selected') && (
+      {inviteVerified && (stage === 'idle' || stage === 'selected') && (
         <View className='upload-zone' onClick={handleChoose}>
           <Text className='upload-icon'>🎬</Text>
           <Text className='upload-tip'>
@@ -123,7 +149,7 @@ export default function UploadPage() {
         <View className='error-box'>{errMsg}，请重试</View>
       )}
 
-      {(stage === 'idle' || stage === 'selected' || stage === 'error') && (
+      {inviteVerified && (stage === 'idle' || stage === 'selected' || stage === 'error') && (
         <>
           <View className='consent-row' onClick={() => setConsent(c => !c)}>
             <View className={`consent-check ${consent ? 'consent-check-on' : ''}`}>

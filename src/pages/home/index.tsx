@@ -1,18 +1,20 @@
 import { useState } from 'react'
-import { View, Text, Image } from '@tarojs/components'
+import { View, Text, Image, Input } from '@tarojs/components'
 import Taro, { useDidShow, getCurrentInstance } from '@tarojs/taro'
 import { useAuthStore } from '../../store/authStore'
 import { useReportStore } from '../../store/reportStore'
-import { reportService, analysisService } from '../../services'
+import { reportService, analysisService, inviteService } from '../../services'
 import type { ReportListItem, AnalysisTask } from '../../services/types'
 import './index.scss'
 
 export default function HomePage() {
-  const { profile } = useAuthStore()
+  const { profile, setProfile } = useAuthStore()
   const { currentTaskId } = useReportStore()
   const [reports, setReports] = useState<ReportListItem[]>([])
   const [latestReport, setLatestReport] = useState<ReportListItem | null>(null)
   const [activeTask, setActiveTask] = useState<AnalysisTask | null>(null)
+  const [inviteCode, setInviteCode] = useState('')
+  const [inviteLoading, setInviteLoading] = useState(false)
 
   useDidShow(async () => {
     try { (getCurrentInstance()?.page as any)?.getTabBar?.()?.setSelected?.(0) } catch {}
@@ -32,9 +34,39 @@ export default function HomePage() {
   })
 
   const initial = profile?.name?.slice(0, 1) ?? '学'
+  const inviteVerified = Boolean(profile?.inviteVerifiedAt)
 
   function goReport() {
     if (latestReport) Taro.navigateTo({ url: `/pages/report-detail/index?id=${latestReport.id}` })
+  }
+
+  async function handleVerifyInvite() {
+    const code = inviteCode.trim()
+    if (!code) {
+      Taro.showToast({ title: '请输入内测邀请码', icon: 'none' })
+      return
+    }
+    if (inviteLoading) return
+    try {
+      setInviteLoading(true)
+      const result = await inviteService.verifyInvite(code)
+      Taro.setStorageSync('profile', result.profile)
+      setProfile(result.profile)
+      setInviteCode('')
+      Taro.showToast({ title: '邀请码已通过', icon: 'success' })
+    } catch (e) {
+      Taro.showToast({ title: e instanceof Error ? e.message : '邀请码验证失败', icon: 'none' })
+    } finally {
+      setInviteLoading(false)
+    }
+  }
+
+  function goUpload() {
+    if (!inviteVerified) {
+      Taro.showToast({ title: '请先输入内测邀请码', icon: 'none' })
+      return
+    }
+    Taro.navigateTo({ url: '/pages/upload/index' })
   }
 
   return (
@@ -54,6 +86,37 @@ export default function HomePage() {
           </View>
           <Text className='muted' style={{ fontSize: '28rpx' }}>›</Text>
         </View>
+      </View>
+
+      <View className={`invite-card ${inviteVerified ? 'invite-card-ok' : ''}`}>
+        <View>
+          <View className='invite-title'>内测邀请码</View>
+          <View className='muted' style={{ marginTop: '6rpx' }}>
+            {inviteVerified ? '已开放真实姿态识别上传测试。' : '仅限受邀学员上传测试视频。'}
+          </View>
+        </View>
+        {inviteVerified ? (
+          <View className='invite-status'>已通过</View>
+        ) : (
+          <View className='invite-input-row'>
+            <Input
+              className='invite-input'
+              value={inviteCode}
+              maxlength={24}
+              placeholder='输入邀请码'
+              placeholderClass='invite-placeholder'
+              confirmType='done'
+              onInput={(e) => setInviteCode(String(e.detail.value || ''))}
+              onConfirm={handleVerifyInvite}
+            />
+            <View
+              className={`invite-btn ${inviteLoading ? 'invite-btn-loading' : ''}`}
+              onClick={handleVerifyInvite}
+            >
+              {inviteLoading ? '验证中' : '验证'}
+            </View>
+          </View>
+        )}
       </View>
 
       {/* 三个 stat 卡，各自跳转 */}
@@ -79,11 +142,11 @@ export default function HomePage() {
           真实姿态识别测试限 15 秒内，MP4/MOV，150MB 以内，画面需包含骑手上身与腿部。
         </View>
         <View
-          className='btn btn-primary'
+          className={`btn ${inviteVerified ? 'btn-primary' : 'btn-ghost'}`}
           style={{ marginTop: '26rpx' }}
-          onClick={() => Taro.navigateTo({ url: '/pages/upload/index' })}
+          onClick={goUpload}
         >
-          上传视频
+          {inviteVerified ? '上传视频' : '输入邀请码后上传'}
         </View>
       </View>
 
