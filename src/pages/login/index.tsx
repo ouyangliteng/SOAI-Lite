@@ -55,9 +55,9 @@ export default function LoginPage() {
         <View className='lp-hint'>
           登录即同意《隐私说明》与视频分析授权
         </View>
-      </View>
 
-      <View className='lp-version'>内测版SOAI-EQ 1.0</View>
+        <View className='lp-version'>内测版SOAI-EQ 1.0</View>
+      </View>
     </View>
   )
 }
