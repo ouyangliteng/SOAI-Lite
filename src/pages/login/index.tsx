@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, Text, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useAuthStore } from '../../store/authStore'
@@ -8,6 +8,15 @@ import './index.scss'
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const { setToken, setProfile } = useAuthStore()
+
+  useEffect(() => {
+    const token = Taro.getStorageSync('token') as string
+    const profile = Taro.getStorageSync('profile')
+    if (!token) return
+    setToken(token)
+    if (profile) setProfile(profile)
+    Taro.switchTab({ url: '/pages/home/index' })
+  }, [setProfile, setToken])
 
   async function handleWxLogin() {
     if (loading) return

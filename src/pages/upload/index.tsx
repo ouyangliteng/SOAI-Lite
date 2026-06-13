@@ -4,6 +4,7 @@ import Taro from '@tarojs/taro'
 import { uploadService, analysisService } from '../../services'
 import type { UploadQuota } from '../../services/types'
 import { useAuthStore } from '../../store/authStore'
+import { useReportStore } from '../../store/reportStore'
 import landscapePoseGuide from '../../assets/upload-landscape-pose-guide.jpg'
 import './index.scss'
 
@@ -14,6 +15,7 @@ type Stage = 'idle' | 'selected' | 'uploading' | 'done' | 'error'
 
 export default function UploadPage() {
   const { profile } = useAuthStore()
+  const { setCurrentTaskId } = useReportStore()
   const [stage, setStage] = useState<Stage>('idle')
   const [file, setFile] = useState<{ path: string; name: string; size: number; duration: number } | null>(null)
   const [progress, setProgress] = useState(0)
@@ -85,7 +87,15 @@ export default function UploadPage() {
       }
       await uploadService.doUpload(uploadUrl, file.path, setProgress)
       await uploadService.notifyUploaded(videoId)
-      const analysisTask = await analysisService.createTask(videoId)
+      let analysisTask
+      try {
+        analysisTask = await analysisService.createTask(videoId)
+      } catch (e) {
+        throw new Error(e instanceof Error
+          ? `视频已上传，但分析任务启动失败：${e.message}`
+          : '视频已上传，但分析任务启动失败，请稍后重试')
+      }
+      setCurrentTaskId(analysisTask.id)
       setStage('done')
       Taro.navigateTo({ url: `/pages/analysis/index?taskId=${analysisTask.id}` })
     } catch (e) {

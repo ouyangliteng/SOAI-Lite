@@ -65,7 +65,18 @@ export async function doUpload(
       url: uploadUrl,
       filePath,
       name: 'file',
-      success: () => resolve(),
+      success: (res: { statusCode?: number; data?: string }) => {
+        if (res.statusCode && res.statusCode >= 400) {
+          let message = `视频上传接口返回 ${res.statusCode}`
+          try {
+            const data = res.data ? JSON.parse(res.data) : null
+            if (data?.message) message = data.message
+          } catch {}
+          reject(new Error(message))
+          return
+        }
+        resolve()
+      },
       fail: (e: { errMsg: string }) => reject(new Error(e.errMsg)),
     })
     task.onProgressUpdate((p: { progress: number }) => onProgress(p.progress))
