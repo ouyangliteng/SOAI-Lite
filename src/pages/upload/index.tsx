@@ -87,6 +87,7 @@ export default function UploadPage() {
       }
       await uploadService.doUpload(uploadUrl, file.path, setProgress)
       await uploadService.notifyUploaded(videoId)
+      uploadService.getUploadQuota().then(setQuota).catch(() => {})
       let analysisTask
       try {
         analysisTask = await analysisService.createTask(videoId)
