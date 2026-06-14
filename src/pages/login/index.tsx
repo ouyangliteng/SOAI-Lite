@@ -92,7 +92,7 @@ export default function LoginPage() {
           <Text className='lp-auth-hint'>勾选后可进行微信授权登录与视频分析授权</Text>
         </View>
 
-        <View className='lp-version'>邀请版SOAI-EQ 2026</View>
+        <View className='lp-version'>SOAI-EQ 0424</View>
       </View>
     </View>
   )
