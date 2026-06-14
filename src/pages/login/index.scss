@@ -64,7 +64,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18rpx;
+  gap: 16rpx;
   padding: 2rpx 0 4rpx;
 }
 
@@ -110,6 +110,14 @@
 .lp-checkbox-on {
   border-color: #22f0c8;
   background: #22f0c8;
+}
+
+.lp-auth-hint {
+  display: block;
+  font-size: 22rpx;
+  line-height: 1.45;
+  color: rgba(139, 148, 158, 0.82);
+  text-align: center;
 }
 
 .lp-wx-btn {
