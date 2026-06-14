@@ -36,9 +36,15 @@ function fixVideoUrl(url: string): string {
 }
 
 const RULE_META: Record<string, { joint: string; normal: string }> = {
+  ffe_vertical_head_pelvis_heel: { joint: '头髋脚跟', normal: '垂直线' },
+  ffe_shoulder_hip_heel_alignment: { joint: '肩髋脚跟', normal: '垂直线' },
   upper_body_stability: { joint: '上身稳定', normal: '肩髋垂直' },
   lower_leg_stability:  { joint: '小腿位置', normal: '踝髋对齐' },
+  knee_softness:        { joint: '膝部柔软', normal: '自然弯曲' },
+  heel_down:            { joint: '脚跟下沉', normal: '脚跟承重' },
   arm_aid:              { joint: '手臂扶助', normal: '前臂水平' },
+  hands_in_front:       { joint: '手在身前', normal: '轻柔联系' },
+  dynamic_balance:      { joint: '动态平衡', normal: '节奏稳定' },
   left_right_symmetry:  { joint: '左右对称', normal: '对称平衡' },
   rhythm_control:       { joint: '节奏控制', normal: '步频均匀' },
 }
