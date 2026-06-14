@@ -58,6 +58,48 @@
   z-index: 1;
 }
 
+.lp-agreement {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.lp-checkbox {
+  width: 34rpx;
+  height: 34rpx;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  margin-top: 4rpx;
+  border: 2rpx solid #6e7681;
+  border-radius: 8rpx;
+  color: #071827;
+  font-size: 24rpx;
+  font-weight: 900;
+  line-height: 30rpx;
+  text-align: center;
+}
+
+.lp-checkbox-on {
+  border-color: #22f0c8;
+  background: #22f0c8;
+}
+
+.lp-agreement-text {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4rpx 8rpx;
+  font-size: 24rpx;
+  line-height: 1.55;
+  color: #8b949e;
+}
+
+.lp-link {
+  color: #22f0c8;
+  font-weight: 700;
+}
+
 .lp-wx-btn {
   width: 100%;
   height: 96rpx;

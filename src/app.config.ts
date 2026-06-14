@@ -7,6 +7,9 @@ export default defineAppConfig({
     'pages/report-detail/index',
     'pages/reports/index',
     'pages/profile/index',
+    'pages/agreement/user/index',
+    'pages/agreement/privacy/index',
+    'pages/agreement/minor/index',
   ],
   window: {
     navigationBarTitleText: 'SOAI',

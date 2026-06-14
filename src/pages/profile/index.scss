@@ -95,6 +95,14 @@
 }
 .menu-label { font-size: 28rpx; color: #e6edf3; }
 .menu-value { font-size: 26rpx; color: #8b949e; }
+.menu-item-clickable {
+  cursor: pointer;
+}
+.menu-arrow {
+  font-size: 36rpx;
+  color: #6e7681;
+  line-height: 1;
+}
 
 /* 趋势柱状图 */
 .trend-bars {

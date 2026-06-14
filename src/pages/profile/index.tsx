@@ -61,6 +61,34 @@ export default function ProfilePage() {
     if (reports[0]) Taro.navigateTo({ url: `/pages/report-detail/index?id=${reports[0].id}` })
   }
 
+  function goAgreement(type: 'user' | 'privacy' | 'minor') {
+    Taro.navigateTo({ url: `/pages/agreement/${type}/index` })
+  }
+
+  function showAbout() {
+    Taro.showModal({
+      title: '关于SOAI',
+      content: 'SOAI-EQ马术姿态识别平台，为马术训练视频分析、骑乘姿态识别、AI训练报告与教学辅助提供服务。',
+      showCancel: false,
+    })
+  }
+
+  function showContact() {
+    Taro.showModal({
+      title: '联系我们',
+      content: '联系邮箱：67260777@qq.com\n官方网站：https://soai.yun',
+      showCancel: false,
+    })
+  }
+
+  function showAccountCancel() {
+    Taro.showModal({
+      title: '账号注销',
+      content: '如需注销账号，请发送申请至 67260777@qq.com。我们将在核验身份后按隐私政策处理账号与数据删除。',
+      showCancel: false,
+    })
+  }
+
   function resetDraft() {
     setDraft({
       name: profile?.name || '',
@@ -262,6 +290,24 @@ export default function ProfilePage() {
             <View key={item.label} className='menu-item'>
               <Text className='menu-label'>{item.label}</Text>
               <Text className='menu-value'>{item.value}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View className='card' style={{ marginTop: '20rpx' }}>
+        <View className='menu-list'>
+          {[
+            { label: '关于SOAI', action: showAbout },
+            { label: '用户协议', action: () => goAgreement('user') },
+            { label: '隐私政策', action: () => goAgreement('privacy') },
+            { label: '未成年人保护', action: () => goAgreement('minor') },
+            { label: '联系我们', action: showContact },
+            { label: '账号注销', action: showAccountCancel },
+          ].map(item => (
+            <View key={item.label} className='menu-item menu-item-clickable' onClick={item.action}>
+              <Text className='menu-label'>{item.label}</Text>
+              <Text className='menu-arrow'>›</Text>
             </View>
           ))}
         </View>
