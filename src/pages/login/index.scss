@@ -53,53 +53,57 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28rpx;
+  gap: 24rpx;
   position: relative;
   z-index: 1;
 }
 
 .lp-agreement {
-  width: 100%;
+  width: 560rpx;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12rpx;
+  gap: 18rpx;
+  padding: 2rpx 0 4rpx;
 }
 
 .lp-agreement-links {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 8rpx;
-  font-size: 24rpx;
+  align-items: center;
+  gap: 10rpx;
+  font-size: 26rpx;
   line-height: 1.45;
 }
 
 .lp-link {
   color: #22f0c8;
-  font-weight: 700;
+  font-weight: 800;
+  text-shadow: 0 0 24rpx rgba(34, 240, 200, 0.12);
 }
 
 .lp-consent-row {
   display: flex;
   align-items: center;
-  gap: 14rpx;
-  font-size: 24rpx;
+  justify-content: center;
+  gap: 16rpx;
+  font-size: 26rpx;
   line-height: 1.4;
   color: #8b949e;
 }
 
 .lp-checkbox {
-  width: 34rpx;
-  height: 34rpx;
+  width: 40rpx;
+  height: 40rpx;
   flex-shrink: 0;
   box-sizing: border-box;
-  border: 2rpx solid #6e7681;
-  border-radius: 8rpx;
+  border: 3rpx solid #6e7681;
+  border-radius: 10rpx;
   color: #071827;
-  font-size: 24rpx;
+  font-size: 26rpx;
   font-weight: 900;
-  line-height: 30rpx;
+  line-height: 34rpx;
   text-align: center;
 }
 
@@ -133,14 +137,6 @@
   font-size: 32rpx;
   font-weight: 700;
   color: #fff;
-}
-
-.lp-hint {
-  font-size: 22rpx;
-  color: #8b949e;
-  text-align: center;
-  line-height: 1.6;
-  padding: 0 24rpx;
 }
 
 .lp-version {
