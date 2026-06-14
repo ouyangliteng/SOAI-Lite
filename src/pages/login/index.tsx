@@ -60,22 +60,25 @@ export default function LoginPage() {
             mode='widthFix'
           />
         </View>
-        <View className='lp-sub'>马术姿态 AI 评估</View>
+        <View className='lp-sub'>马术姿态安全AI评估</View>
         <View className='lp-tagline'>SOAI-EQ专业分析平台</View>
       </View>
 
       <View className='lp-body'>
         <View className='lp-agreement'>
-          <View
-            className={`lp-checkbox${agreePolicy ? ' lp-checkbox-on' : ''}`}
-            onClick={() => setAgreePolicy((prev) => !prev)}
-          >
-            {agreePolicy ? '✓' : ''}
+          <View className='lp-agreement-links'>
+            <Text className='lp-link' onClick={() => goAgreement('user')}>《SOAI-EQ用户服务协议》</Text>
+            <Text className='lp-link' onClick={() => goAgreement('privacy')}>《SOAI-EQ隐私政策》</Text>
           </View>
-          <View className='lp-agreement-text'>
+
+          <View className='lp-consent-row'>
+            <View
+              className={`lp-checkbox${agreePolicy ? ' lp-checkbox-on' : ''}`}
+              onClick={() => setAgreePolicy((prev) => !prev)}
+            >
+              {agreePolicy ? '✓' : ''}
+            </View>
             <Text>我已阅读并同意</Text>
-            <Text className='lp-link' onClick={() => goAgreement('user')}>《SOAI用户服务协议》</Text>
-            <Text className='lp-link' onClick={() => goAgreement('privacy')}>《SOAI隐私政策》</Text>
           </View>
         </View>
 
@@ -91,7 +94,7 @@ export default function LoginPage() {
           勾选后可进行微信授权登录与视频分析授权
         </View>
 
-        <View className='lp-version'>内测版SOAI-EQ 1.0</View>
+        <View className='lp-version'>邀请版SOAI-EQ 2026</View>
       </View>
     </View>
   )

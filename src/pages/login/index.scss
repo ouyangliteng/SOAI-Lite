@@ -61,8 +61,32 @@
 .lp-agreement {
   width: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.lp-agreement-links {
+  display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 16rpx;
+  gap: 8rpx;
+  font-size: 24rpx;
+  line-height: 1.45;
+}
+
+.lp-link {
+  color: #22f0c8;
+  font-weight: 700;
+}
+
+.lp-consent-row {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  font-size: 24rpx;
+  line-height: 1.4;
+  color: #8b949e;
 }
 
 .lp-checkbox {
@@ -70,7 +94,6 @@
   height: 34rpx;
   flex-shrink: 0;
   box-sizing: border-box;
-  margin-top: 4rpx;
   border: 2rpx solid #6e7681;
   border-radius: 8rpx;
   color: #071827;
@@ -83,21 +106,6 @@
 .lp-checkbox-on {
   border-color: #22f0c8;
   background: #22f0c8;
-}
-
-.lp-agreement-text {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4rpx 8rpx;
-  font-size: 24rpx;
-  line-height: 1.55;
-  color: #8b949e;
-}
-
-.lp-link {
-  color: #22f0c8;
-  font-weight: 700;
 }
 
 .lp-wx-btn {

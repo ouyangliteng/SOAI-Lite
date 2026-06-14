@@ -11,7 +11,7 @@ export type AgreementContent = {
 }
 
 export const userAgreement: AgreementContent = {
-  title: 'SOAI用户服务协议',
+  title: 'SOAI-EQ用户服务协议',
   version: 'V1.0',
   intro: [
     '最后更新日期：2026年6月',
@@ -84,7 +84,7 @@ export const userAgreement: AgreementContent = {
 }
 
 export const privacyAgreement: AgreementContent = {
-  title: 'SOAI隐私政策',
+  title: 'SOAI-EQ隐私政策',
   version: 'V1.0',
   intro: [
     'SOAI非常重视用户隐私保护。',
