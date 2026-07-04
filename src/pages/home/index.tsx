@@ -41,7 +41,7 @@ export default function HomePage() {
   }
 
   async function handleVerifyInvite() {
-    const code = inviteCode.trim()
+    const code = inviteCode.trim().replace(/\s+/g, '').toUpperCase()
     if (!code) {
       Taro.showToast({ title: '请输入内测邀请码', icon: 'none' })
       return

@@ -59,6 +59,58 @@
   z-index: 1;
 }
 
+.lp-invite-panel {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 22rpx 24rpx 24rpx;
+  border: 1rpx solid rgba(34, 240, 200, 0.22);
+  border-radius: 18rpx;
+  background: rgba(13, 22, 30, 0.78);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.05),
+    0 18rpx 52rpx rgba(0, 0, 0, 0.22);
+}
+
+.lp-invite-label {
+  display: block;
+  color: #e6edf3;
+  font-size: 26rpx;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-bottom: 16rpx;
+}
+
+.lp-invite-input {
+  width: 100%;
+  height: 76rpx;
+  box-sizing: border-box;
+  padding: 0 22rpx;
+  border: 1rpx solid rgba(139, 148, 158, 0.28);
+  border-radius: 14rpx;
+  background: rgba(5, 13, 22, 0.88);
+  color: #e6edf3;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.lp-invite-placeholder {
+  color: rgba(139, 148, 158, 0.72);
+  font-weight: 500;
+}
+
+.lp-invite-panel-ok {
+  border-color: rgba(0, 184, 150, 0.36);
+  background: rgba(5, 32, 29, 0.72);
+}
+
+.lp-invite-ok {
+  display: block;
+  color: #22f0c8;
+  font-size: 25rpx;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
 .lp-agreement {
   width: 560rpx;
   box-sizing: border-box;
@@ -124,6 +176,9 @@
 .lp-wx-btn {
   width: 100%;
   height: 96rpx;
+  margin: 0;
+  padding: 0;
+  border: 0;
   border-radius: 18rpx;
   background: #07c160;
   display: flex;
@@ -131,10 +186,19 @@
   justify-content: center;
   gap: 18rpx;
   box-shadow: 0 8rpx 32rpx rgba(7, 193, 96, 0.35);
+  line-height: 1;
+}
+
+.lp-wx-btn::after {
+  border: 0;
 }
 
 .lp-wx-btn-loading {
   opacity: 0.7;
+}
+
+.lp-wx-btn-hover {
+  opacity: 0.86;
 }
 
 .lp-wx-icon {
