@@ -117,16 +117,29 @@ export default function ProfilePage() {
 
   async function pickAvatar() {
     try {
+      // chooseMedia is the current recommended API (wx 2.21.2+)
+      const res = await (Taro as any).chooseMedia({
+        count: 1,
+        mediaType: ['image'],
+        sourceType: ['album', 'camera'],
+        sizeType: ['compressed'],
+      })
+      const path = res.tempFiles?.[0]?.tempFilePath
+      if (path) {
+        setLocalAvatarPath(path)
+        return
+      }
+    } catch { /* chooseMedia not available, fall through */ }
+    // fallback: legacy chooseImage
+    try {
       const res = await Taro.chooseImage({
         count: 1,
         sizeType: ['compressed'],
         sourceType: ['album', 'camera'],
       })
-      const path = res.tempFilePaths[0]
+      const path = res.tempFiles?.[0]?.path || res.tempFilePaths?.[0]
       if (path) setLocalAvatarPath(path)
-    } catch {
-      // user cancelled
-    }
+    } catch { /* user cancelled */ }
   }
 
   function startEditProfile() {
@@ -189,19 +202,16 @@ export default function ProfilePage() {
         <View className='profile-edit-title'>个人信息</View>
 
         {/* 头像选取 */}
-        <View className='edit-avatar-wrap' onClick={pickAvatar}>
-          <View className='profile-avatar edit-avatar'>
+        <View className='edit-avatar-wrap'>
+          <View className='profile-avatar' onClick={pickAvatar}>
             {avatarSrc
-              ? <Image src={avatarSrc} className='profile-avatar-img' />
+              ? <Image src={avatarSrc} className='profile-avatar-img' mode='aspectFill' />
               : <Text>{initial}</Text>
             }
-            <View className='edit-avatar-mask'>
-              <Text className='edit-avatar-icon'>📷</Text>
-            </View>
           </View>
-          <Text className='edit-avatar-hint'>
-            {uploadingAvatar ? '上传中…' : '点击更换头像'}
-          </Text>
+          <View className='edit-avatar-btn' onClick={pickAvatar}>
+            <Text>{uploadingAvatar ? '上传中…' : '📷 更换头像'}</Text>
+          </View>
         </View>
 
         <View className='profile-field'>
@@ -273,9 +283,9 @@ export default function ProfilePage() {
       <View className='profile-header'>
         <View className='profile-avatar'>
           {(editing && localAvatarPath)
-            ? <Image src={localAvatarPath} className='profile-avatar-img' />
+            ? <Image src={localAvatarPath} className='profile-avatar-img' mode='aspectFill' />
             : profile?.avatarUrl
-              ? <Image src={profile.avatarUrl} className='profile-avatar-img' />
+              ? <Image src={profile.avatarUrl} className='profile-avatar-img' mode='aspectFill' />
               : <Text>{initial}</Text>
           }
         </View>

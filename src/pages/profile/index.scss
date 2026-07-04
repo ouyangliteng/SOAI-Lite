@@ -52,27 +52,17 @@
   align-items: center;
   margin: 24rpx 0 8rpx;
 }
-.edit-avatar {
-  position: relative;
-  cursor: pointer;
-}
-.edit-avatar-mask {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.38);
+.edit-avatar-btn {
+  margin-top: 14rpx;
+  height: 48rpx;
+  padding: 0 20rpx;
+  border-radius: 999rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.edit-avatar-icon {
-  font-size: 36rpx;
-  line-height: 1;
-}
-.edit-avatar-hint {
-  margin-top: 12rpx;
+  background: rgba(0, 184, 150, 0.12);
+  color: #22f0c8;
   font-size: 22rpx;
-  color: #8b949e;
 }
 
 .profile-field {
