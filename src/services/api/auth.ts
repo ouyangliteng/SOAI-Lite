@@ -70,3 +70,28 @@ export async function updateProfile(payload: Partial<StudentProfile>): Promise<S
   })
   return data.profile
 }
+
+export async function uploadAvatar(filePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const token = Taro.getStorageSync('token') || ''
+    Taro.uploadFile({
+      url: `${BASE}/student/avatar`,
+      filePath,
+      name: 'avatar',
+      header: { 'Authorization': token ? `Bearer ${token}` : '' },
+      success: (res) => {
+        if ((res.statusCode ?? 0) >= 400) {
+          reject(new Error(`头像上传失败 ${res.statusCode}`))
+          return
+        }
+        try {
+          const data = JSON.parse(res.data)
+          resolve(data.avatarUrl || data.url || filePath)
+        } catch {
+          reject(new Error('头像上传响应解析失败'))
+        }
+      },
+      fail: (e) => reject(new Error(e.errMsg)),
+    })
+  })
+}

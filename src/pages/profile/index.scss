@@ -38,12 +38,43 @@
 
 .profile-edit-card {
   margin-top: 28rpx;
+  padding-bottom: 40rpx;
 }
 .profile-edit-title {
   font-size: 30rpx;
   font-weight: 800;
   color: #e6edf3;
 }
+/* 编辑模式头像选取器 */
+.edit-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 24rpx 0 8rpx;
+}
+.edit-avatar {
+  position: relative;
+  cursor: pointer;
+}
+.edit-avatar-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.edit-avatar-icon {
+  font-size: 36rpx;
+  line-height: 1;
+}
+.edit-avatar-hint {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #8b949e;
+}
+
 .profile-field {
   margin-top: 22rpx;
 }

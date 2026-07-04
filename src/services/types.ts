@@ -150,6 +150,7 @@ export interface AuthService {
   loginWithWx(code: string, anonymousId: string, userInfo?: Partial<StudentProfile>): Promise<{ token: string; profile: StudentProfile }>
   getProfile(): Promise<StudentProfile>
   updateProfile(payload: Partial<StudentProfile>): Promise<StudentProfile>
+  uploadAvatar(filePath: string): Promise<string>
 }
 
 export interface UploadService {

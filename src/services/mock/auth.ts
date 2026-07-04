@@ -76,6 +76,11 @@ export async function updateProfile(
   }
 }
 
+export async function uploadAvatar(filePath: string): Promise<string> {
+  await delay(300)
+  return filePath
+}
+
 function delay(ms: number) {
   return new Promise(r => setTimeout(r, ms))
 }

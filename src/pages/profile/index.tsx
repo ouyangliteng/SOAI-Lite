@@ -21,11 +21,14 @@ export default function ProfilePage() {
   const [latestDetail, setLatestDetail] = useState<TrainingReport | null>(null)
   const [editing, setEditing] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [localAvatarPath, setLocalAvatarPath] = useState('')
   const [draft, setDraft] = useState({
     name: '',
     currentLevel: '',
     clubName: '',
     coachName: '',
+    avatarUrl: '',
   })
 
   useEffect(() => {
@@ -107,7 +110,23 @@ export default function ProfilePage() {
       currentLevel: profile?.currentLevel || '',
       clubName: profile?.clubName || '',
       coachName: profile?.coachName || '',
+      avatarUrl: profile?.avatarUrl || '',
     })
+    setLocalAvatarPath('')
+  }
+
+  async function pickAvatar() {
+    try {
+      const res = await Taro.chooseImage({
+        count: 1,
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera'],
+      })
+      const path = res.tempFilePaths[0]
+      if (path) setLocalAvatarPath(path)
+    } catch {
+      // user cancelled
+    }
   }
 
   function startEditProfile() {
@@ -129,14 +148,25 @@ export default function ProfilePage() {
     }
     try {
       setSavingProfile(true)
+      let avatarUrl = draft.avatarUrl
+      if (localAvatarPath) {
+        setUploadingAvatar(true)
+        try {
+          avatarUrl = await authService.uploadAvatar(localAvatarPath)
+        } finally {
+          setUploadingAvatar(false)
+        }
+      }
       const updated = await authService.updateProfile({
         name,
         currentLevel: draft.currentLevel.trim() || '未设置级别',
         clubName: draft.clubName.trim(),
         coachName: draft.coachName.trim(),
+        avatarUrl,
       })
       Taro.setStorageSync('profile', updated)
       setProfile(updated)
+      setLocalAvatarPath('')
       setEditing(false)
       Taro.showToast({ title: '资料已保存', icon: 'success' })
     } catch (e) {
@@ -151,9 +181,27 @@ export default function ProfilePage() {
   const maxScore = trendReports.reduce((m, r) => Math.max(m, r.overallScore), 1)
 
   function renderProfileEditor() {
+    const avatarSrc = localAvatarPath || draft.avatarUrl
     return (
       <View className='card profile-edit-card'>
         <View className='profile-edit-title'>个人信息</View>
+
+        {/* 头像选取 */}
+        <View className='edit-avatar-wrap' onClick={pickAvatar}>
+          <View className='profile-avatar edit-avatar'>
+            {avatarSrc
+              ? <Image src={avatarSrc} className='profile-avatar-img' />
+              : <Text>{initial}</Text>
+            }
+            <View className='edit-avatar-mask'>
+              <Text className='edit-avatar-icon'>📷</Text>
+            </View>
+          </View>
+          <Text className='edit-avatar-hint'>
+            {uploadingAvatar ? '上传中…' : '点击更换头像'}
+          </Text>
+        </View>
+
         <View className='profile-field'>
           <Text className='profile-field-label'>昵称</Text>
           <Input
@@ -162,6 +210,7 @@ export default function ProfilePage() {
             maxlength={20}
             placeholder='填写昵称'
             placeholderClass='profile-placeholder'
+            adjustPosition
             onInput={(e) => setDraft(prev => ({ ...prev, name: String(e.detail.value || '') }))}
           />
         </View>
@@ -173,6 +222,7 @@ export default function ProfilePage() {
             maxlength={24}
             placeholder='如：初级进阶'
             placeholderClass='profile-placeholder'
+            adjustPosition
             onInput={(e) => setDraft(prev => ({ ...prev, currentLevel: String(e.detail.value || '') }))}
           />
         </View>
@@ -184,6 +234,7 @@ export default function ProfilePage() {
             maxlength={30}
             placeholder='可选'
             placeholderClass='profile-placeholder'
+            adjustPosition
             onInput={(e) => setDraft(prev => ({ ...prev, clubName: String(e.detail.value || '') }))}
           />
         </View>
@@ -195,6 +246,7 @@ export default function ProfilePage() {
             maxlength={20}
             placeholder='可选'
             placeholderClass='profile-placeholder'
+            adjustPosition
             onInput={(e) => setDraft(prev => ({ ...prev, coachName: String(e.detail.value || '') }))}
           />
         </View>
