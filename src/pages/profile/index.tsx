@@ -153,6 +153,8 @@ export default function ProfilePage() {
         setUploadingAvatar(true)
         try {
           avatarUrl = await authService.uploadAvatar(localAvatarPath)
+        } catch {
+          Taro.showToast({ title: '头像上传失败，其他资料已保存', icon: 'none', duration: 2500 })
         } finally {
           setUploadingAvatar(false)
         }
@@ -270,9 +272,11 @@ export default function ProfilePage() {
       {/* 头部 */}
       <View className='profile-header'>
         <View className='profile-avatar'>
-          {profile?.avatarUrl
-            ? <Image src={profile.avatarUrl} className='profile-avatar-img' />
-            : <Text>{initial}</Text>
+          {(editing && localAvatarPath)
+            ? <Image src={localAvatarPath} className='profile-avatar-img' />
+            : profile?.avatarUrl
+              ? <Image src={profile.avatarUrl} className='profile-avatar-img' />
+              : <Text>{initial}</Text>
           }
         </View>
         <View className='profile-name'>{profile?.name ?? '内测会员'}</View>
