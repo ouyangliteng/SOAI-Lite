@@ -1,5 +1,7 @@
 .lp {
+  height: 100vh;
   min-height: 100vh;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -8,7 +10,7 @@
   background:
     linear-gradient(170deg, rgba(0, 216, 232, 0.08) 0%, rgba(13, 17, 23, 0) 34%),
     linear-gradient(180deg, #050d16 0%, #0d1117 48%, #070a10 100%);
-  padding: 0 56rpx 80rpx;
+  padding: 0 56rpx 120rpx;
 }
 
 .lp-top {
@@ -53,9 +55,70 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28rpx;
-  position: relative;
+  gap: 24rpx;
   z-index: 1;
+}
+
+.lp-agreement {
+  width: 560rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  padding: 2rpx 0 4rpx;
+}
+
+.lp-agreement-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+  font-size: 26rpx;
+  line-height: 1.45;
+}
+
+.lp-link {
+  color: #22f0c8;
+  font-weight: 800;
+  text-shadow: 0 0 24rpx rgba(34, 240, 200, 0.12);
+}
+
+.lp-consent-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  font-size: 26rpx;
+  line-height: 1.4;
+  color: #8b949e;
+}
+
+.lp-checkbox {
+  width: 40rpx;
+  height: 40rpx;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border: 3rpx solid #6e7681;
+  border-radius: 10rpx;
+  color: #071827;
+  font-size: 26rpx;
+  font-weight: 900;
+  line-height: 34rpx;
+  text-align: center;
+}
+
+.lp-checkbox-on {
+  border-color: #22f0c8;
+  background: #22f0c8;
+}
+
+.lp-auth-hint {
+  display: block;
+  font-size: 22rpx;
+  line-height: 1.45;
+  color: rgba(139, 148, 158, 0.82);
+  text-align: center;
 }
 
 .lp-wx-btn {
@@ -85,18 +148,14 @@
   color: #fff;
 }
 
-.lp-hint {
-  font-size: 22rpx;
-  color: #8b949e;
-  text-align: center;
-  line-height: 1.6;
-  padding: 0 24rpx;
-}
-
 .lp-version {
+  position: absolute;
+  left: 56rpx;
+  right: 56rpx;
+  bottom: calc(34rpx + env(safe-area-inset-bottom));
+  z-index: 1;
   font-size: 22rpx;
   color: rgba(139, 148, 158, 0.72);
   text-align: center;
   line-height: 1.4;
-  margin-top: -12rpx;
 }

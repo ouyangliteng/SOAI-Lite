@@ -5,6 +5,10 @@ import { reportService } from '../../services'
 import type { ReportListItem } from '../../services/types'
 import './index.scss'
 
+function getReportTime(item: ReportListItem) {
+  return item.reportTime || item.createdAt || item.trainingDate || ''
+}
+
 export default function ReportsPage() {
   const [reports, setReports] = useState<ReportListItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -13,7 +17,7 @@ export default function ReportsPage() {
     try { (getCurrentInstance()?.page as any)?.getTabBar?.()?.setSelected?.(1) } catch {}
     setLoading(true)
     const list = await reportService.listReports().catch(() => [])
-    setReports([...list].sort((a, b) => b.trainingDate.localeCompare(a.trainingDate)))
+    setReports([...list].sort((a, b) => getReportTime(b).localeCompare(getReportTime(a))))
     setLoading(false)
   })
 

@@ -7,6 +7,7 @@ import './index.scss'
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
+  const [agreePolicy, setAgreePolicy] = useState(false)
   const { setToken, setProfile } = useAuthStore()
 
   useEffect(() => {
@@ -20,6 +21,13 @@ export default function LoginPage() {
 
   async function handleWxLogin() {
     if (loading) return
+    if (!agreePolicy) {
+      Taro.showToast({
+        title: '请先阅读并同意相关协议',
+        icon: 'none',
+      })
+      return
+    }
     try {
       setLoading(true)
       const wxUserInfo = await getWxUserInfo().catch(() => null)
@@ -38,6 +46,10 @@ export default function LoginPage() {
     }
   }
 
+  function goAgreement(type: 'user' | 'privacy') {
+    Taro.navigateTo({ url: `/pages/agreement/${type}/index` })
+  }
+
   return (
     <View className='lp'>
       <View className='lp-top'>
@@ -48,7 +60,7 @@ export default function LoginPage() {
             mode='widthFix'
           />
         </View>
-        <View className='lp-sub'>马术姿态 AI 评估</View>
+        <View className='lp-sub'>马术姿态安全AI评估</View>
         <View className='lp-tagline'>SOAI-EQ专业分析平台</View>
       </View>
 
@@ -61,12 +73,27 @@ export default function LoginPage() {
           <Text className='lp-wx-text'>{loading ? '登录中…' : '微信授权登录'}</Text>
         </View>
 
-        <View className='lp-hint'>
-          登录即同意《隐私说明》与视频分析授权
-        </View>
+        <View className='lp-agreement'>
+          <View className='lp-agreement-links'>
+            <Text className='lp-link' onClick={() => goAgreement('user')}>《SOAI-EQ用户服务协议》</Text>
+            <Text className='lp-link' onClick={() => goAgreement('privacy')}>《SOAI-EQ隐私政策》</Text>
+          </View>
 
-        <View className='lp-version'>内测版SOAI-EQ 1.0</View>
+          <View className='lp-consent-row'>
+            <View
+              className={`lp-checkbox${agreePolicy ? ' lp-checkbox-on' : ''}`}
+              onClick={() => setAgreePolicy((prev) => !prev)}
+            >
+              {agreePolicy ? '✓' : ''}
+            </View>
+            <Text>我已阅读并同意</Text>
+          </View>
+
+          <Text className='lp-auth-hint'>勾选后可进行微信授权登录与视频分析授权</Text>
+        </View>
       </View>
+
+      <View className='lp-version'>SOAI-EQ 0424</View>
     </View>
   )
 }

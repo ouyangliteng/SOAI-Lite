@@ -6,6 +6,15 @@ import { authService, reportService } from '../../services'
 import type { ReportListItem, TrainingReport } from '../../services/types'
 import './index.scss'
 
+function getReportTime(item: ReportListItem) {
+  return item.reportTime || item.createdAt || item.trainingDate || ''
+}
+
+function formatTrendDate(item: ReportListItem, index: number, total: number) {
+  const base = (item.trainingDate || '').slice(5) || `第${index + 1}次`
+  return total > 1 ? `${base}\n#${index + 1}` : base
+}
+
 export default function ProfilePage() {
   const { profile, setProfile, logout } = useAuthStore()
   const [reports, setReports] = useState<ReportListItem[]>([])
@@ -35,10 +44,13 @@ export default function ProfilePage() {
       setProfile(remoteProfile)
     }
     const list = await reportService.listReports().catch(() => [])
-    setReports(list)
-    if (list[0]) {
-      const detail = await reportService.getReport(list[0].id).catch(() => null)
+    const sorted = [...list].sort((a, b) => getReportTime(b).localeCompare(getReportTime(a)))
+    setReports(sorted)
+    if (sorted[0]) {
+      const detail = await reportService.getReport(sorted[0].id).catch(() => null)
       setLatestDetail(detail)
+    } else {
+      setLatestDetail(null)
     }
   })
 
@@ -61,6 +73,34 @@ export default function ProfilePage() {
     if (reports[0]) Taro.navigateTo({ url: `/pages/report-detail/index?id=${reports[0].id}` })
   }
 
+  function goAgreement(type: 'user' | 'privacy' | 'minor') {
+    Taro.navigateTo({ url: `/pages/agreement/${type}/index` })
+  }
+
+  function showAbout() {
+    Taro.showModal({
+      title: '关于SOAI',
+      content: 'SOAI-EQ马术姿态识别平台，为马术训练视频分析、骑乘姿态识别、AI训练报告与教学辅助提供服务。',
+      showCancel: false,
+    })
+  }
+
+  function showContact() {
+    Taro.showModal({
+      title: '联系我们',
+      content: '联系邮箱：67260777@qq.com\n官方网站：https://soai.yun',
+      showCancel: false,
+    })
+  }
+
+  function showAccountCancel() {
+    Taro.showModal({
+      title: '账号注销',
+      content: '如需注销账号，请发送申请至 67260777@qq.com。我们将在核验身份后按隐私政策处理账号与数据删除。',
+      showCancel: false,
+    })
+  }
+
   function resetDraft() {
     setDraft({
       name: profile?.name || '',
@@ -73,6 +113,11 @@ export default function ProfilePage() {
   function startEditProfile() {
     resetDraft()
     setEditing(true)
+    setTimeout(() => {
+      try {
+        Taro.pageScrollTo({ selector: '.profile-edit-card', duration: 220 })
+      } catch {}
+    }, 60)
   }
 
   async function saveProfile() {
@@ -105,8 +150,71 @@ export default function ProfilePage() {
   const trendReports = reports.slice(0, 5).reverse()
   const maxScore = trendReports.reduce((m, r) => Math.max(m, r.overallScore), 1)
 
+  function renderProfileEditor() {
+    return (
+      <View className='card profile-edit-card'>
+        <View className='profile-edit-title'>个人信息</View>
+        <View className='profile-field'>
+          <Text className='profile-field-label'>昵称</Text>
+          <Input
+            className='profile-input'
+            value={draft.name}
+            maxlength={20}
+            placeholder='填写昵称'
+            placeholderClass='profile-placeholder'
+            onInput={(e) => setDraft(prev => ({ ...prev, name: String(e.detail.value || '') }))}
+          />
+        </View>
+        <View className='profile-field'>
+          <Text className='profile-field-label'>当前级别</Text>
+          <Input
+            className='profile-input'
+            value={draft.currentLevel}
+            maxlength={24}
+            placeholder='如：初级进阶'
+            placeholderClass='profile-placeholder'
+            onInput={(e) => setDraft(prev => ({ ...prev, currentLevel: String(e.detail.value || '') }))}
+          />
+        </View>
+        <View className='profile-field'>
+          <Text className='profile-field-label'>所属俱乐部</Text>
+          <Input
+            className='profile-input'
+            value={draft.clubName}
+            maxlength={30}
+            placeholder='可选'
+            placeholderClass='profile-placeholder'
+            onInput={(e) => setDraft(prev => ({ ...prev, clubName: String(e.detail.value || '') }))}
+          />
+        </View>
+        <View className='profile-field'>
+          <Text className='profile-field-label'>绑定教练</Text>
+          <Input
+            className='profile-input'
+            value={draft.coachName}
+            maxlength={20}
+            placeholder='可选'
+            placeholderClass='profile-placeholder'
+            onInput={(e) => setDraft(prev => ({ ...prev, coachName: String(e.detail.value || '') }))}
+          />
+        </View>
+        <View className='profile-edit-actions'>
+          <View
+            className='profile-action profile-action-ghost'
+            onClick={() => { resetDraft(); setEditing(false) }}
+          >
+            取消
+          </View>
+          <View className='profile-action profile-action-primary' onClick={saveProfile}>
+            {savingProfile ? '保存中' : '保存'}
+          </View>
+        </View>
+      </View>
+    )
+  }
+
   return (
-    <View className='page'>
+    <View className='page profile-page'>
       {/* 头部 */}
       <View className='profile-header'>
         <View className='profile-avatar'>
@@ -119,67 +227,6 @@ export default function ProfilePage() {
         <View className='profile-level'>{profile?.currentLevel ?? '未设置级别'}</View>
         <View className='profile-edit-btn' onClick={startEditProfile}>编辑资料</View>
       </View>
-
-      {editing && (
-        <View className='card profile-edit-card'>
-          <View className='profile-edit-title'>个人信息</View>
-          <View className='profile-field'>
-            <Text className='profile-field-label'>昵称</Text>
-            <Input
-              className='profile-input'
-              value={draft.name}
-              maxlength={20}
-              placeholder='填写昵称'
-              placeholderClass='profile-placeholder'
-              onInput={(e) => setDraft(prev => ({ ...prev, name: String(e.detail.value || '') }))}
-            />
-          </View>
-          <View className='profile-field'>
-            <Text className='profile-field-label'>当前级别</Text>
-            <Input
-              className='profile-input'
-              value={draft.currentLevel}
-              maxlength={24}
-              placeholder='如：初级进阶'
-              placeholderClass='profile-placeholder'
-              onInput={(e) => setDraft(prev => ({ ...prev, currentLevel: String(e.detail.value || '') }))}
-            />
-          </View>
-          <View className='profile-field'>
-            <Text className='profile-field-label'>所属俱乐部</Text>
-            <Input
-              className='profile-input'
-              value={draft.clubName}
-              maxlength={30}
-              placeholder='可选'
-              placeholderClass='profile-placeholder'
-              onInput={(e) => setDraft(prev => ({ ...prev, clubName: String(e.detail.value || '') }))}
-            />
-          </View>
-          <View className='profile-field'>
-            <Text className='profile-field-label'>绑定教练</Text>
-            <Input
-              className='profile-input'
-              value={draft.coachName}
-              maxlength={20}
-              placeholder='可选'
-              placeholderClass='profile-placeholder'
-              onInput={(e) => setDraft(prev => ({ ...prev, coachName: String(e.detail.value || '') }))}
-            />
-          </View>
-          <View className='profile-edit-actions'>
-            <View
-              className='profile-action profile-action-ghost'
-              onClick={() => { resetDraft(); setEditing(false) }}
-            >
-              取消
-            </View>
-            <View className='profile-action profile-action-primary' onClick={saveProfile}>
-              {savingProfile ? '保存中' : '保存'}
-            </View>
-          </View>
-        </View>
-      )}
 
       {/* 训练综合趋势走向 */}
       {trendReports.length > 0 && (
@@ -195,11 +242,11 @@ export default function ProfilePage() {
                     style={{ height: `${Math.round((r.overallScore / maxScore) * 100)}%` }}
                   />
                 </View>
-                <Text className='trend-date'>{r.trainingDate.slice(5)}</Text>
+                <Text className='trend-date'>{formatTrendDate(r, i, trendReports.length)}</Text>
               </View>
             ))}
           </View>
-          {reports.length > 1 && (
+          {reports.length > 1 ? (
             <View className='trend-summary'>
               {reports[0].overallScore > reports[reports.length - 1].overallScore
                 ? '↑ 综合得分呈上升趋势，训练效果持续改善'
@@ -207,7 +254,42 @@ export default function ProfilePage() {
                 ? '→ 综合得分保持稳定'
                 : '↓ 综合得分近期有所下降，建议重点复盘'}
             </View>
+          ) : (
+            <View className='trend-summary trend-summary-muted'>
+              已记录 1 次训练，完成第 2 次不同视频分析后生成历史走向。
+            </View>
           )}
+        </View>
+      )}
+
+      {reports.length > 0 && (
+        <View className='card' style={{ marginTop: '20rpx' }}>
+          <View className='row'>
+            <View className='card-title'>历史训练记录</View>
+            <View className='history-count'>近 {reports.length} 次</View>
+          </View>
+          <View className='history-list'>
+            {reports.map((r, i) => (
+              <View
+                key={r.id}
+                className='history-item'
+                onClick={() => Taro.navigateTo({ url: `/pages/report-detail/index?id=${r.id}` })}
+              >
+                <View>
+                  <Text className='history-score'>{r.overallScore}</Text>
+                  <Text className='history-unit'>分</Text>
+                </View>
+                <View className='history-main'>
+                  <View className='history-title'>第 {reports.length - i} 次训练</View>
+                  <View className='history-text'>{r.oneLineConclusion || '训练报告已生成'}</View>
+                </View>
+                <View className='history-side'>
+                  <Text className='history-date'>{r.trainingDate}</Text>
+                  <Text className='menu-arrow'>›</Text>
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
       )}
 
@@ -252,16 +334,43 @@ export default function ProfilePage() {
       )}
 
       {/* 账户信息 */}
+      {editing ? renderProfileEditor() : (
+        <View className='card profile-info-card'>
+          <View className='profile-info-head'>
+            <View className='card-title'>个人信息</View>
+            <View className='profile-info-edit' onClick={startEditProfile}>编辑</View>
+          </View>
+          <View className='menu-list profile-info-list'>
+            {[
+              { label: '当前级别', value: profile?.currentLevel ?? '未填写' },
+              { label: '所属俱乐部', value: profile?.clubName ?? '未填写' },
+              { label: '绑定教练',  value: profile?.coachName ?? '未绑定' },
+            ].map(item => (
+              <View key={item.label} className='menu-item menu-item-clickable' onClick={startEditProfile}>
+                <Text className='menu-label'>{item.label}</Text>
+                <View className='profile-info-value'>
+                  <Text className='menu-value'>{item.value}</Text>
+                  <Text className='menu-arrow'>›</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
       <View className='card' style={{ marginTop: '20rpx' }}>
         <View className='menu-list'>
           {[
-            { label: '当前级别', value: profile?.currentLevel ?? '未填写' },
-            { label: '所属俱乐部', value: profile?.clubName ?? '未填写' },
-            { label: '绑定教练',  value: profile?.coachName ?? '未绑定' },
+            { label: '关于SOAI', action: showAbout },
+            { label: '用户协议', action: () => goAgreement('user') },
+            { label: '隐私政策', action: () => goAgreement('privacy') },
+            { label: '未成年人保护', action: () => goAgreement('minor') },
+            { label: '联系我们', action: showContact },
+            { label: '账号注销', action: showAccountCancel },
           ].map(item => (
-            <View key={item.label} className='menu-item'>
+            <View key={item.label} className='menu-item menu-item-clickable' onClick={item.action}>
               <Text className='menu-label'>{item.label}</Text>
-              <Text className='menu-value'>{item.value}</Text>
+              <Text className='menu-arrow'>›</Text>
             </View>
           ))}
         </View>

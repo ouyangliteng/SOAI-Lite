@@ -95,6 +95,8 @@ export async function listReports(): Promise<ReportListItem[]> {
     id: item.reportId,
     overallScore: item.overallScore,
     trainingDate: item.trainingDate,
+    reportTime: item.reportTime,
+    createdAt: item.createdAt,
     oneLineConclusion: item.oneLineConclusion || item.summary?.oneLineConclusion || '',
     riskCount: item.riskCount ?? 0,
   }))
