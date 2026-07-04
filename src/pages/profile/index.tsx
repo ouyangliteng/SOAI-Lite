@@ -168,7 +168,20 @@ export default function ProfilePage() {
         try {
           avatarUrl = await authService.uploadAvatar(localAvatarPath)
         } catch {
-          Taro.showToast({ title: '头像上传失败，其他资料已保存', icon: 'none', duration: 2500 })
+          // Server upload failed — persist temp file locally so avatar survives the session
+          try {
+            const saved = await new Promise<string>((resolve, reject) =>
+              Taro.saveFile({
+                tempFilePath: localAvatarPath,
+                success: (r) => resolve(r.savedFilePath),
+                fail: (e) => reject(new Error(e.errMsg)),
+              })
+            )
+            avatarUrl = saved
+          } catch {
+            // saveFile also failed — keep temp path for this session only
+            avatarUrl = localAvatarPath
+          }
         } finally {
           setUploadingAvatar(false)
         }
