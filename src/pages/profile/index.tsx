@@ -36,8 +36,9 @@ export default function ProfilePage() {
   }, [])
 
   useEffect(() => {
+    if (editing) return  // don't clobber in-progress edits when profile refreshes
     resetDraft()
-  }, [profile])
+  }, [profile, editing])
 
   useDidShow(async () => {
     try { (getCurrentInstance()?.page as any)?.getTabBar?.()?.setSelected?.(2) } catch {}
