@@ -124,6 +124,8 @@ export interface ReportListItem {
   id: string
   overallScore: number
   trainingDate: string
+  reportTime?: string
+  createdAt?: string
   oneLineConclusion: string
   riskCount: number
 }
