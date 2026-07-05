@@ -15,7 +15,7 @@ type Stage = 'idle' | 'selected' | 'uploading' | 'done' | 'error'
 
 export default function UploadPage() {
   const { profile } = useAuthStore()
-  const { setCurrentTaskId } = useReportStore()
+  const { setCurrentTaskId, setCurrentReportId } = useReportStore()
   const [stage, setStage] = useState<Stage>('idle')
   const [file, setFile] = useState<{ path: string; name: string; size: number; duration: number } | null>(null)
   const [progress, setProgress] = useState(0)
@@ -30,6 +30,30 @@ export default function UploadPage() {
   }, [])
 
   const inviteVerified = Boolean(profile?.inviteVerifiedAt)
+
+  async function goReport(reportId: string) {
+    setCurrentReportId(reportId)
+    const url = `/pages/report-detail/index?id=${encodeURIComponent(reportId)}`
+    try {
+      await Taro.navigateTo({ url })
+    } catch {
+      await Taro.redirectTo({ url }).catch(() => {
+        Taro.showToast({ title: '报告已生成，请在报告页查看', icon: 'none' })
+      })
+    }
+  }
+
+  async function goAnalysis(taskId: string) {
+    setCurrentTaskId(taskId)
+    const url = `/pages/analysis/index?taskId=${encodeURIComponent(taskId)}`
+    try {
+      await Taro.navigateTo({ url })
+    } catch {
+      await Taro.redirectTo({ url }).catch(() => {
+        Taro.showToast({ title: '分析已开始，请在首页查看进度', icon: 'none' })
+      })
+    }
+  }
 
   async function handleChoose() {
     if (!inviteVerified) {
@@ -60,6 +84,7 @@ export default function UploadPage() {
   }
 
   async function handleUpload() {
+    if (stage === 'uploading') return
     if (!inviteVerified) {
       Taro.showToast({ title: '请先在首页输入内测邀请码', icon: 'none' })
       return
@@ -80,10 +105,14 @@ export default function UploadPage() {
       if (reused && reportId) {
         setStage('done')
         Taro.showToast({ title: message || '已复用原报告', icon: 'none' })
-        setTimeout(() => {
-          Taro.navigateTo({ url: `/pages/report-detail/index?id=${reportId}` })
-        }, 600)
+        setTimeout(() => { goReport(reportId) }, 600)
         return
+      }
+      if (reused) {
+        throw new Error(message || '已识别同一视频，但原报告暂未生成，请稍后在报告页查看。')
+      }
+      if (!uploadUrl) {
+        throw new Error('上传地址未生成，请重新选择视频。')
       }
       await uploadService.doUpload(uploadUrl, file.path, setProgress)
       await uploadService.notifyUploaded(videoId)
@@ -96,9 +125,12 @@ export default function UploadPage() {
           ? `视频已上传，但分析任务启动失败：${e.message}`
           : '视频已上传，但分析任务启动失败，请稍后重试')
       }
-      setCurrentTaskId(analysisTask.id)
       setStage('done')
-      Taro.navigateTo({ url: `/pages/analysis/index?taskId=${analysisTask.id}` })
+      if (analysisTask.status === 'completed' && analysisTask.reportId) {
+        await goReport(analysisTask.reportId)
+      } else {
+        await goAnalysis(analysisTask.id)
+      }
     } catch (e) {
       setErrMsg(e instanceof Error ? e.message : '上传失败')
       setStage('error')

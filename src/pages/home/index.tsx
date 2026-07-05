@@ -162,7 +162,7 @@ export default function HomePage() {
           <View
             className='btn btn-secondary'
             style={{ marginTop: '24rpx' }}
-            onClick={() => Taro.navigateTo({ url: '/pages/analysis/index' })}
+            onClick={() => Taro.navigateTo({ url: `/pages/analysis/index?taskId=${activeTask.id}` })}
           >
             查看进度
           </View>

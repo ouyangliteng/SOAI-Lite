@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { analysisService } from '../../services'
+import { useReportStore } from '../../store/reportStore'
 import type { AnalysisStatus } from '../../services/types'
 import './index.scss'
 
@@ -17,7 +18,8 @@ const STATUS_ORDER = ['start', 'queued', 'analyzing', 'generating_report', 'comp
 
 export default function AnalysisPage() {
   const router = useRouter()
-  const taskId = router.params.taskId ?? null
+  const { currentTaskId, setCurrentReportId, clearTask } = useReportStore()
+  const taskId = router.params.taskId || currentTaskId || null
   const [status, setStatus] = useState<AnalysisStatus>('queued')
   const [progressText, setProgressText] = useState('排队等待中…')
   const [failureText, setFailureText] = useState('真实姿态识别超时，请稍后重试。')
@@ -39,15 +41,19 @@ export default function AnalysisPage() {
         setProgressText(task.progressText)
         if (task.status === 'completed' && task.reportId) {
           clearInterval(timerRef.current!)
+          setCurrentReportId(task.reportId)
+          clearTask()
           setTimeout(() => {
             Taro.redirectTo({ url: `/pages/report-detail/index?id=${task.reportId}` })
           }, 800)
         } else if (task.status === 'failed') {
           clearInterval(timerRef.current!)
           setFailureText(task.errorMessage || task.progressText || '真实姿态识别失败，请稍后重试。')
+          clearTask()
           setFailed(true)
         } else if (task.status === 'completed' && !task.reportId) {
           clearInterval(timerRef.current!)
+          clearTask()
           setFailed(true)
         }
       } catch {
@@ -55,7 +61,7 @@ export default function AnalysisPage() {
       }
     }, 3000)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [taskId])
+  }, [taskId, setCurrentReportId, clearTask])
 
   if (!taskId) {
     return (
