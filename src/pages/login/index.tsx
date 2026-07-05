@@ -10,7 +10,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [agreePolicy, setAgreePolicy] = useState(false)
   const [inviteCode, setInviteCode] = useState('')
-  const [nickname, setNickname] = useState('')
   const [inviteVerifiedAt, setInviteVerifiedAt] = useState(() => getInviteVerifiedAt())
   const { setToken, setProfile, logout } = useAuthStore()
 
@@ -42,20 +41,9 @@ export default function LoginPage() {
     try {
       setLoading(true)
       const wxUserInfo = await getWxUserInfo().catch(() => null)
-      const displayName = normalizeWechatName(nickname) || normalizeWechatName(wxUserInfo?.name)
-      if (!displayName) {
-        Taro.showToast({
-          title: '请先填写微信昵称',
-          icon: 'none',
-        })
-        return
-      }
       const { code } = await Taro.login()
       const anonymousId = getOrCreateAnonymousId()
-      const loginUserInfo = {
-        name: displayName,
-        avatarUrl: wxUserInfo?.avatarUrl || '',
-      }
+      const loginUserInfo = wxUserInfo || undefined
       const { token, profile } = await authService.loginWithWx(code, anonymousId, loginUserInfo)
       let finalProfile = mergeInviteAccess(mergeWxUserInfo(profile, loginUserInfo), inviteVerifiedAt)
       Taro.setStorageSync('token', token)
@@ -67,7 +55,7 @@ export default function LoginPage() {
         setInviteVerifiedAtStorage(verifiedAt)
         finalProfile = mergeInviteAccess(mergeWxUserInfo(inviteResult.profile, loginUserInfo), verifiedAt)
       }
-      if (loginUserInfo.name || loginUserInfo.avatarUrl) {
+      if (loginUserInfo?.name || loginUserInfo?.avatarUrl) {
         finalProfile = await authService.updateProfile({
           ...finalProfile,
           name: loginUserInfo.name || finalProfile.name,
@@ -131,21 +119,6 @@ export default function LoginPage() {
             />
           </View>
         )}
-
-        <View className='lp-nickname-panel'>
-          <Text className='lp-invite-label'>微信昵称</Text>
-          <Input
-            className='lp-invite-input'
-            type='nickname'
-            value={nickname}
-            maxlength={20}
-            placeholder='点击选择或填写微信昵称'
-            placeholderClass='lp-invite-placeholder'
-            confirmType='done'
-            disabled={loading}
-            onInput={(e) => setNickname(String(e.detail.value || ''))}
-          />
-        </View>
 
         <Button
           className={`lp-wx-btn${loading ? ' lp-wx-btn-loading' : ''}`}
