@@ -6,15 +6,6 @@
   box-sizing: border-box;
 }
 
-.report-poster-canvas {
-  position: fixed;
-  left: -9999px;
-  top: 0;
-  width: 345px;
-  height: 1800px;
-  pointer-events: none;
-}
-
 .report-page-header {
   display: flex;
   align-items: center;
@@ -469,12 +460,6 @@
   font-size: 30rpx;
   font-weight: 700;
   margin-top: 40rpx;
-}
-.save-btn-pdf {
-  margin-top: 18rpx;
-  background: #161b22;
-  border: 1rpx solid rgba(34,240,200,0.45);
-  color: #22f0c8;
 }
 .save-btn-disabled {
   opacity: 0.55;

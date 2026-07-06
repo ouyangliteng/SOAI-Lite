@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Image, Video, Textarea, CoverView, Canvas } from '@tarojs/components'
+import { View, Text, Image, Video, Textarea, CoverView } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { reportService } from '../../services'
 import type { PoseTrackFrame, PoseTrackPoint, ReportFeedbackRole, TrainingReport } from '../../services/types'
@@ -27,10 +27,6 @@ type OverlayFrame = Pick<PoseTrackFrame, 'sourceWidth' | 'sourceHeight' | 'point
 
 const VIDEO_SHELL_WIDTH_RPX = 694
 const VIDEO_SHELL_HEIGHT_RPX = 360
-const REPORT_POSTER_CANVAS_ID = 'reportPosterCanvas'
-const REPORT_POSTER_CANVAS_WIDTH = 345
-const REPORT_POSTER_CANVAS_HEIGHT = 1800
-const REPORT_POSTER_EXPORT_SCALE = 2
 const RIDER_LINE_PAIRS = [
   ['head', 'shoulder', 'head'],
   ['shoulder', 'hip', 'torso'],
@@ -238,203 +234,6 @@ function getLineStyle(line: RiderLine, frame: OverlayFrame | null): OverlayLineS
   }
 }
 
-async function ensureAlbumPermission() {
-  const setting = await Taro.getSetting()
-  const authSetting = (setting.authSetting || {}) as Record<string, boolean | undefined>
-  if (authSetting['scope.writePhotosAlbum']) return true
-  if (authSetting['scope.writePhotosAlbum'] === false) {
-    const modal = await Taro.showModal({
-      title: '需要相册权限',
-      content: '请在设置中开启保存到相册权限后重试。',
-      confirmText: '去设置',
-    })
-    if (!modal.confirm) return false
-    const opened = await Taro.openSetting()
-    return Boolean(((opened.authSetting || {}) as Record<string, boolean | undefined>)['scope.writePhotosAlbum'])
-  }
-  try {
-    await Taro.authorize({ scope: 'scope.writePhotosAlbum' })
-    return true
-  } catch {
-    return false
-  }
-}
-
-function drawWrappedText(
-  ctx: Taro.CanvasContext,
-  text: string,
-  x: number,
-  y: number,
-  maxWidth: number,
-  lineHeight: number,
-  maxLines: number,
-) {
-  const chars = String(text || '').split('')
-  let line = ''
-  let lineCount = 0
-  for (let index = 0; index < chars.length; index += 1) {
-    const next = line + chars[index]
-    const width = ctx.measureText ? ctx.measureText(next).width : next.length * 24
-    if (width > maxWidth && line) {
-      ctx.fillText(line, x, y)
-      y += lineHeight
-      lineCount += 1
-      line = chars[index]
-      if (lineCount >= maxLines - 1) {
-        let finalLine = line
-        for (let tailIndex = index + 1; tailIndex < chars.length; tailIndex += 1) {
-          const nextFinalLine = `${finalLine}${chars[tailIndex]}`
-          const finalWidth = ctx.measureText ? ctx.measureText(`${nextFinalLine}…`).width : nextFinalLine.length * 24
-          if (finalWidth > maxWidth) break
-          finalLine = nextFinalLine
-        }
-        ctx.fillText(`${finalLine}…`, x, y)
-        return y + lineHeight
-      }
-    } else {
-      line = next
-    }
-  }
-  if (line) {
-    ctx.fillText(line, x, y)
-    y += lineHeight
-  }
-  return y
-}
-
-function drawSectionTitle(ctx: Taro.CanvasContext, title: string, y: number) {
-  ctx.setFillStyle('#22f0c8')
-  ctx.fillRect(24, y - 18, 4, 24)
-  ctx.setFillStyle('#e6edf3')
-  ctx.setFontSize(22)
-  ctx.fillText(title, 38, y)
-  return y + 30
-}
-
-function drawCard(ctx: Taro.CanvasContext, x: number, y: number, width: number, height: number) {
-  ctx.setFillStyle('#101821')
-  ctx.fillRect(x, y, width, height)
-  ctx.setStrokeStyle('#23303d')
-  ctx.strokeRect(x, y, width, height)
-}
-
-function drawTextList(ctx: Taro.CanvasContext, title: string, items: string[], y: number, color = '#c9d1d9') {
-  if (!items.length) return y
-  y = drawSectionTitle(ctx, title, y)
-  ctx.setFontSize(15)
-  items.forEach((item, index) => {
-    ctx.setFillStyle(color)
-    y = drawWrappedText(ctx, `${index + 1}. ${item}`, 28, y, REPORT_POSTER_CANVAS_WIDTH - 56, 23, 5) + 8
-  })
-  return y + 18
-}
-
-function makeReportPoster(
-  report: TrainingReport,
-  scoreEntries: [string, number][],
-  topAngles: TrainingReport['jointAngles'],
-  safetyEvaluation: string[],
-) {
-  return new Promise<string>((resolve, reject) => {
-    const ctx = Taro.createCanvasContext(REPORT_POSTER_CANVAS_ID)
-    const width = REPORT_POSTER_CANVAS_WIDTH
-    const height = REPORT_POSTER_CANVAS_HEIGHT
-
-    ctx.setFillStyle('#0d1117')
-    ctx.fillRect(0, 0, width, height)
-    drawCard(ctx, 18, 24, width - 36, 160)
-
-    ctx.setFillStyle('#e6edf3')
-    ctx.setFontSize(21)
-    drawWrappedText(ctx, 'SOAI-EQ 马术姿态完整报告', 32, 58, width - 64, 28, 2)
-    ctx.setFillStyle('#8b949e')
-    ctx.setFontSize(14)
-    ctx.fillText(report.trainingDate, 32, 98)
-
-    ctx.setFillStyle('#22f0c8')
-    ctx.setFontSize(58)
-    ctx.fillText(String(report.overallScore), 32, 158)
-    ctx.setFillStyle('#c9d1d9')
-    ctx.setFontSize(21)
-    ctx.fillText('分', 104, 154)
-    ctx.setFillStyle('#8b949e')
-    ctx.setFontSize(15)
-    drawWrappedText(ctx, `追踪 ${report.trackingFrames} 帧 · 置信度 ${report.trackingConfidence}%`, 170, 138, 130, 22, 2)
-
-    let y = 230
-    y = drawSectionTitle(ctx, '5 维评分', y)
-    scoreEntries.forEach(([name, value]) => {
-      ctx.setFillStyle('#c9d1d9')
-      ctx.setFontSize(16)
-      ctx.fillText(name, 28, y + 14)
-      ctx.setFillStyle('#25313d')
-      ctx.fillRect(118, y + 2, 150, 10)
-      ctx.setFillStyle('#22f0c8')
-      ctx.fillRect(118, y + 2, Math.max(0, Math.min(100, value)) * 1.5, 10)
-      ctx.setFillStyle('#ffffff')
-      ctx.fillText(String(value), 286, y + 14)
-      y += 34
-    })
-
-    y += 18
-    y = drawSectionTitle(ctx, '关键角度', y)
-    topAngles.slice(0, 8).forEach((angle, index) => {
-      const x = 24
-      const boxY = y + index * 64
-      drawCard(ctx, x, boxY, width - 48, 50)
-      ctx.setFillStyle('#8b949e')
-      ctx.setFontSize(14)
-      drawWrappedText(ctx, angle.joint, x + 14, boxY + 21, 96, 18, 1)
-      ctx.setFillStyle(angle.status === 'warning' ? '#d29922' : '#22f0c8')
-      ctx.setFontSize(22)
-      ctx.fillText(`${angle.angle}°`, x + 14, boxY + 43)
-      ctx.setFillStyle('#8b949e')
-      ctx.setFontSize(14)
-      drawWrappedText(ctx, angle.normal, x + 128, boxY + 34, 150, 18, 1)
-    })
-    y += Math.min(topAngles.length || 1, 8) * 64 + 22
-
-    y = drawTextList(ctx, '综合评价', safetyEvaluation, y)
-    y = drawTextList(ctx, '安全提醒', report.riskPoints, y, '#f0c36a')
-    y = drawTextList(ctx, '改进建议', report.improvements, y)
-    y = drawTextList(ctx, '主要问题', report.problemPoints, y)
-
-    y = drawSectionTitle(ctx, '下次训练重点', y)
-    ctx.setFillStyle('#c9d1d9')
-    ctx.setFontSize(15)
-    y = drawWrappedText(ctx, report.nextTrainingFocus || '暂无', 28, y, width - 56, 23, 6) + 18
-    if (report.trendSummary) {
-      y = drawSectionTitle(ctx, '趋势总结', y)
-      ctx.setFillStyle('#c9d1d9')
-      ctx.setFontSize(15)
-      drawWrappedText(ctx, report.trendSummary, 28, y, width - 56, 23, 5)
-    }
-
-    ctx.setFillStyle('#22f0c8')
-    ctx.setFontSize(15)
-    ctx.fillText('SOAI-EQ 专业分析平台', 24, height - 44)
-    ctx.setFillStyle('#8b949e')
-    ctx.setFontSize(12)
-    drawWrappedText(ctx, '报告结果仅作训练参考，请结合教练现场判断。', 24, height - 24, width - 48, 16, 1)
-
-    ctx.draw(false, () => {
-      setTimeout(() => {
-        Taro.canvasToTempFilePath({
-          canvasId: REPORT_POSTER_CANVAS_ID,
-          width: REPORT_POSTER_CANVAS_WIDTH,
-          height: REPORT_POSTER_CANVAS_HEIGHT,
-          destWidth: REPORT_POSTER_CANVAS_WIDTH * REPORT_POSTER_EXPORT_SCALE,
-          destHeight: REPORT_POSTER_CANVAS_HEIGHT * REPORT_POSTER_EXPORT_SCALE,
-          fileType: 'jpg',
-          quality: 0.95,
-          success: (res) => resolve(res.tempFilePath),
-          fail: reject,
-        })
-      }, 120)
-    })
-  })
-}
-
 export default function ReportDetailPage() {
   const router = useRouter()
   const reportId = router.params.id ?? 'report_mock_001'
@@ -461,25 +260,6 @@ export default function ReportDetailPage() {
         Taro.showToast({ title: '加载失败', icon: 'error' })
       })
   }, [reportId])
-
-  async function handleSaveScreenshot() {
-    if (!report) return
-    const allowed = await ensureAlbumPermission()
-    if (!allowed) {
-      Taro.showToast({ title: '未获得相册权限', icon: 'none' })
-      return
-    }
-    Taro.showLoading({ title: '生成报告图' })
-    try {
-      const posterPath = await makeReportPoster(report, scoreEntries, topAngles, safetyEvaluation)
-      await Taro.saveImageToPhotosAlbum({ filePath: posterPath })
-      Taro.showToast({ title: '已保存到相册', icon: 'success' })
-    } catch {
-      Taro.showToast({ title: '保存失败，请重试', icon: 'none' })
-    } finally {
-      Taro.hideLoading()
-    }
-  }
 
   async function handleExportPdf() {
     if (!report || exportingPdf) return
@@ -577,7 +357,6 @@ export default function ReportDetailPage() {
 
   return (
     <View className='report-detail-page'>
-      <Canvas canvasId={REPORT_POSTER_CANVAS_ID} className='report-poster-canvas' />
       <View className='report-page-header'>
         <View className='report-back-home' onClick={goHome}>‹ 返回首页</View>
         <Text className='report-page-title'>完整报告</Text>
@@ -867,12 +646,7 @@ export default function ReportDetailPage() {
           </View>
         </View>
 
-        <View className='save-btn' onClick={handleSaveScreenshot}>
-          <Text>📥</Text>
-          <Text>保存报告截图到相册</Text>
-        </View>
-
-        <View className={`save-btn save-btn-pdf ${exportingPdf ? 'save-btn-disabled' : ''}`} onClick={handleExportPdf}>
+        <View className={`save-btn ${exportingPdf ? 'save-btn-disabled' : ''}`} onClick={handleExportPdf}>
           <Text>PDF</Text>
           <Text>{exportingPdf ? '正在生成完整报告' : '导出完整报告 PDF'}</Text>
         </View>
