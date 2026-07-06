@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { View, Text, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { uploadService, analysisService } from '../../services'
+import { uploadService, analysisService, authService } from '../../services'
 import type { UploadQuota } from '../../services/types'
 import { useAuthStore } from '../../store/authStore'
 import { useReportStore } from '../../store/reportStore'
@@ -14,7 +14,7 @@ const MAX_DURATION_SEC = 15
 type Stage = 'idle' | 'selected' | 'uploading' | 'done' | 'error'
 
 export default function UploadPage() {
-  const { profile } = useAuthStore()
+  const { profile, setProfile } = useAuthStore()
   const { setCurrentTaskId, setCurrentReportId } = useReportStore()
   const [stage, setStage] = useState<Stage>('idle')
   const [file, setFile] = useState<{ path: string; name: string; size: number; duration: number } | null>(null)
@@ -24,10 +24,16 @@ export default function UploadPage() {
   const [quota, setQuota] = useState<UploadQuota | null>(null)
 
   useEffect(() => {
+    authService.getProfile()
+      .then((remoteProfile) => {
+        Taro.setStorageSync('profile', remoteProfile)
+        setProfile(remoteProfile)
+      })
+      .catch(() => {})
     uploadService.getUploadQuota()
       .then(setQuota)
       .catch(() => {})
-  }, [])
+  }, [setProfile])
 
   const inviteVerified = Boolean(profile?.inviteVerifiedAt)
 
@@ -89,7 +95,7 @@ export default function UploadPage() {
       Taro.showToast({ title: '请先在首页输入内测邀请码', icon: 'none' })
       return
     }
-    if (quota && quota.remaining <= 0) {
+    if (quota && !quota.unlimited && quota.remaining <= 0) {
       Taro.showToast({ title: '今天已达到 3 次上传上限', icon: 'none' })
       return
     }
@@ -104,8 +110,13 @@ export default function UploadPage() {
       uploadService.getUploadQuota().then(setQuota).catch(() => {})
       if (reused && reportId) {
         setStage('done')
-        Taro.showToast({ title: message || '已复用原报告', icon: 'none' })
-        setTimeout(() => { goReport(reportId) }, 600)
+        const result = await Taro.showModal({
+          title: '视频已分析过',
+          content: message || '系统识别到这是同一用户上传过的同一个训练视频，本次不重复上传和分析，将打开原报告。',
+          confirmText: '查看原报告',
+          showCancel: false,
+        })
+        if (result.confirm) goReport(reportId)
         return
       }
       if (reused) {
@@ -132,7 +143,22 @@ export default function UploadPage() {
         await goAnalysis(analysisTask.id)
       }
     } catch (e) {
-      setErrMsg(e instanceof Error ? e.message : '上传失败')
+      const message = e instanceof Error ? e.message : '上传失败'
+      if (message.includes('邀请码')) {
+        const refreshedProfile = await authService.getProfile().catch(() => null)
+        if (refreshedProfile) {
+          Taro.setStorageSync('profile', refreshedProfile)
+          setProfile(refreshedProfile)
+        }
+        Taro.showModal({
+          title: '需要重新验证',
+          content: '手机端当前微信账号还没有通过内测邀请码。请返回首页输入已发放的邀请码后，再上传测试视频。',
+          confirmText: '返回首页',
+          showCancel: false,
+          success: () => Taro.switchTab({ url: '/pages/home/index' }),
+        })
+      }
+      setErrMsg(message)
       setStage('error')
     }
   }
@@ -155,8 +181,8 @@ export default function UploadPage() {
 
       {quota && (
         <View className='file-info'>
-          <View className='file-name'>今日剩余分析次数</View>
-          <View className='file-meta'>{quota.remaining} / {quota.limit}</View>
+          <View className='file-name'>{quota.unlimited ? '内测上传权限' : '今日剩余分析次数'}</View>
+          <View className='file-meta'>{quota.unlimited ? '不限次数' : `${quota.remaining} / ${quota.limit}`}</View>
         </View>
       )}
 

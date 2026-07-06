@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Image, Video, Textarea, Canvas } from '@tarojs/components'
+import { View, Text, Image, Video, Textarea, CoverView, Canvas } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { reportService } from '../../services'
 import type { PoseTrackFrame, PoseTrackPoint, ReportFeedbackRole, TrainingReport } from '../../services/types'
@@ -8,156 +8,434 @@ import './index.scss'
 type NavTab = 'assessment' | 'risks' | 'improvements'
 const TAB_LABELS: Record<NavTab, string> = { assessment: '综合评价', risks: '安全提醒', improvements: '进步' }
 const FEEDBACK_TAGS = ['姿态判断不准', '角度数据偏差', '安全评价需修正', '视频角度影响', '教练已确认']
-const POSE_CANVAS_ID = 'poseTrackCanvas'
-const VIDEO_HEIGHT_RPX = 360
-const PAGE_PADDING_RPX = 28
-const DISPLAY_POINT_KEYS = ['head', 'shoulder', 'elbow', 'waist', 'knee', 'heel', 'toe'] as const
-const POSE_CONNECTIONS: [string, string][] = [
-  ['head', 'shoulder'],
-  ['shoulder', 'elbow'],
-  ['shoulder', 'waist'],
-  ['waist', 'knee'],
-  ['knee', 'heel'],
-  ['heel', 'toe'],
-]
-type DisplayPointKey = typeof DISPLAY_POINT_KEYS[number]
-type DisplayPointMap = Record<DisplayPointKey, PoseTrackPoint | undefined>
-type VideoMeta = { width: number; height: number } | null
-type ContentRect = { x: number; y: number; width: number; height: number }
-
-function getNearestTrackFrame(frames: PoseTrackFrame[], timeMs: number): PoseTrackFrame {
-  return frames.reduce((nearest, frame) => (
-    Math.abs(frame.timeMs - timeMs) < Math.abs(nearest.timeMs - timeMs) ? frame : nearest
-  ), frames[0])
+const RIDER_POINT_LABELS: Record<string, string> = {
+  head: '头',
+  shoulder: '肩',
+  elbow: '肘',
+  hand: '手',
+  hip: '髋',
+  leg: '腿',
+  foot: '脚',
 }
+type RiderPointKey = keyof typeof RIDER_POINT_LABELS
+type RiderPoint = { key: string; label?: string; point: PoseTrackPoint }
+type PoseSegment = 'head' | 'torso' | 'arm' | 'leg'
+type RiderLine = { key: string; from: PoseTrackPoint; to: PoseTrackPoint; segment: PoseSegment }
+type OverlayPointStyle = { left: string; top: string }
+type OverlayLineStyle = { left: string; top: string; width: string; transform: string }
+type OverlayFrame = Pick<PoseTrackFrame, 'sourceWidth' | 'sourceHeight' | 'points' | 'confidence' | 'timeMs'>
 
-function pointReady(point?: PoseTrackPoint) {
-  return point && point.confidence >= 0.18
-}
-
-function averagePoint(points: Array<PoseTrackPoint | undefined>): PoseTrackPoint | undefined {
-  const readyPoints = points.filter(pointReady) as PoseTrackPoint[]
-  if (!readyPoints.length) return undefined
-  const confidence = readyPoints.reduce((sum, point) => sum + point.confidence, 0) / readyPoints.length
-  return {
-    x: readyPoints.reduce((sum, point) => sum + point.x, 0) / readyPoints.length,
-    y: readyPoints.reduce((sum, point) => sum + point.y, 0) / readyPoints.length,
-    confidence,
-    derived: readyPoints.some(point => point.derived),
-  }
-}
-
-function getDisplayPoints(frame: PoseTrackFrame): DisplayPointMap {
-  const p = frame.points
-  return {
-    head: p.head,
-    shoulder: averagePoint([p.leftShoulder, p.rightShoulder]),
-    elbow: averagePoint([p.leftElbow, p.rightElbow]),
-    waist: p.waist,
-    knee: averagePoint([p.leftKnee, p.rightKnee]),
-    heel: averagePoint([p.leftHeel, p.rightHeel]),
-    toe: averagePoint([p.leftToe, p.rightToe]),
-  }
-}
-
-function getFrameVideoMeta(frame?: PoseTrackFrame): VideoMeta {
-  if (!frame?.sourceWidth || !frame?.sourceHeight) return null
-  return { width: Number(frame.sourceWidth), height: Number(frame.sourceHeight) }
-}
-
-function getVideoContentRect(canvasWidth: number, canvasHeight: number, videoMeta: VideoMeta, frameMeta: VideoMeta): ContentRect | null {
-  const effectiveMeta = videoMeta?.width && videoMeta?.height ? videoMeta : frameMeta
-  if (!effectiveMeta?.width || !effectiveMeta?.height) return null
-
-  const videoRatio = effectiveMeta.width / effectiveMeta.height
-  const canvasRatio = canvasWidth / canvasHeight
-
-  if (videoRatio > canvasRatio) {
-    const height = canvasWidth / videoRatio
-    return {
-      x: 0,
-      y: (canvasHeight - height) / 2,
-      width: canvasWidth,
-      height,
-    }
-  }
-
-  const width = canvasHeight * videoRatio
-  return {
-    x: (canvasWidth - width) / 2,
-    y: 0,
-    width,
-    height: canvasHeight,
-  }
-}
-
-function mapPoint(point: PoseTrackPoint, rect: ContentRect) {
-  return {
-    x: rect.x + point.x * rect.width,
-    y: rect.y + point.y * rect.height,
-  }
-}
-
-function drawPoseTrack(report: TrainingReport, currentTimeSec: number, videoMeta: VideoMeta) {
-  if (!shouldShowPoseOverlay(report)) return
-
-  const systemInfo = Taro.getSystemInfoSync()
-  const rpx = systemInfo.windowWidth / 750
-  const canvasWidth = systemInfo.windowWidth - PAGE_PADDING_RPX * 2 * rpx
-  const canvasHeight = VIDEO_HEIGHT_RPX * rpx
-  const frame = getNearestTrackFrame(report.poseTrack.frames, currentTimeSec * 1000)
-  const contentRect = getVideoContentRect(canvasWidth, canvasHeight, videoMeta, getFrameVideoMeta(frame))
-  const displayPoints = getDisplayPoints(frame)
-  const ctx = Taro.createCanvasContext(POSE_CANVAS_ID)
-
-  ctx.clearRect(0, 0, canvasWidth, canvasHeight)
-  if (!contentRect) {
-    ctx.draw()
-    return
-  }
-  ctx.setLineCap('round')
-  ctx.setLineJoin('round')
-  ctx.setStrokeStyle('rgba(34, 240, 200, 0.42)')
-  ctx.setLineWidth(1.1)
-
-  POSE_CONNECTIONS.forEach(([fromKey, toKey]) => {
-    const from = displayPoints[fromKey as DisplayPointKey]
-    const to = displayPoints[toKey as DisplayPointKey]
-    if (!pointReady(from) || !pointReady(to)) return
-    const fromPos = mapPoint(from, contentRect)
-    const toPos = mapPoint(to, contentRect)
-    ctx.beginPath()
-    ctx.moveTo(fromPos.x, fromPos.y)
-    ctx.lineTo(toPos.x, toPos.y)
-    ctx.stroke()
-  })
-
-  DISPLAY_POINT_KEYS.forEach((key) => {
-    const point = displayPoints[key]
-    if (!pointReady(point)) return
-    const { x, y } = mapPoint(point, contentRect)
-    const radius = key === 'toe' || key === 'heel' ? 2.4 : 3.1
-    ctx.beginPath()
-    ctx.arc(x, y, radius, 0, Math.PI * 2)
-    ctx.setFillStyle(point.derived ? 'rgba(210, 153, 34, 0.78)' : 'rgba(34, 240, 200, 0.82)')
-    ctx.fill()
-    ctx.setStrokeStyle('rgba(255, 255, 255, 0.5)')
-    ctx.setLineWidth(0.8)
-    ctx.stroke()
-    ctx.setStrokeStyle('rgba(34, 240, 200, 0.42)')
-    ctx.setLineWidth(1.1)
-  })
-
-  ctx.draw()
-}
+const VIDEO_SHELL_WIDTH_RPX = 694
+const VIDEO_SHELL_HEIGHT_RPX = 360
+const REPORT_POSTER_CANVAS_ID = 'reportPosterCanvas'
+const REPORT_POSTER_WIDTH = 690
+const REPORT_POSTER_HEIGHT = 2200
+const REPORT_POSTER_CANVAS_WIDTH = 345
+const REPORT_POSTER_CANVAS_HEIGHT = 1100
+const RIDER_LINE_PAIRS = [
+  ['head', 'shoulder', 'head'],
+  ['shoulder', 'hip', 'torso'],
+  ['shoulder', 'elbow', 'arm'],
+  ['elbow', 'hand', 'arm'],
+  ['hip', 'knee', 'leg'],
+  ['knee', 'foot', 'leg'],
+] as const
 
 function shouldShowPoseOverlay(report: TrainingReport) {
   return Boolean(
     report.videoVisibleToday &&
     report.videoUrl &&
-    report.poseTrack?.quality === 'detected' &&
-    report.poseTrack.frames?.length
+    !report.poseOverlayVideoUrl &&
+    report.poseTrack?.frames?.length
   )
+}
+
+function hasPoseOverlayVideo(report: TrainingReport) {
+  return Boolean(report.videoVisibleToday && report.videoUrl && report.poseOverlayVideoUrl)
+}
+
+function clonePoint(point: PoseTrackPoint): PoseTrackPoint {
+  return {
+    x: point.x,
+    y: point.y,
+    confidence: point.confidence,
+    derived: point.derived,
+  }
+}
+
+function interpolatePoint(from?: PoseTrackPoint, to?: PoseTrackPoint, progress = 0): PoseTrackPoint | undefined {
+  if (pointVisible(from) && pointVisible(to)) {
+    return {
+      x: from.x + (to.x - from.x) * progress,
+      y: from.y + (to.y - from.y) * progress,
+      confidence: Math.min(from.confidence, to.confidence),
+      derived: Boolean(from.derived || to.derived),
+    }
+  }
+  if (pointVisible(from)) return clonePoint(from)
+  if (pointVisible(to)) return clonePoint(to)
+  return undefined
+}
+
+function getInterpolatedTrackFrame(frames: PoseTrackFrame[], timeMs: number): OverlayFrame {
+  const sortedFrames = frames.slice().sort((a, b) => a.timeMs - b.timeMs)
+  const firstFrame = sortedFrames[0]
+  const lastFrame = sortedFrames[sortedFrames.length - 1]
+  if (!firstFrame || timeMs <= firstFrame.timeMs) return firstFrame
+  if (timeMs >= lastFrame.timeMs) return lastFrame
+
+  const nextIndex = sortedFrames.findIndex(frame => frame.timeMs >= timeMs)
+  const prevFrame = sortedFrames[Math.max(0, nextIndex - 1)]
+  const nextFrame = sortedFrames[nextIndex]
+  const duration = Math.max(1, nextFrame.timeMs - prevFrame.timeMs)
+  const progress = Math.max(0, Math.min(1, (timeMs - prevFrame.timeMs) / duration))
+  const pointKeys = Array.from(new Set([
+    ...Object.keys(prevFrame.points || {}),
+    ...Object.keys(nextFrame.points || {}),
+  ]))
+  const points = pointKeys.reduce<Record<string, PoseTrackPoint>>((acc, key) => {
+    const point = interpolatePoint(prevFrame.points?.[key], nextFrame.points?.[key], progress)
+    if (point) acc[key] = point
+    return acc
+  }, {})
+
+  return {
+    timeMs,
+    sourceWidth: prevFrame.sourceWidth || nextFrame.sourceWidth,
+    sourceHeight: prevFrame.sourceHeight || nextFrame.sourceHeight,
+    confidence: Math.min(Number(prevFrame.confidence || 0), Number(nextFrame.confidence || 0)),
+    points,
+  }
+}
+
+function averagePoint(points: Array<PoseTrackPoint | undefined>): PoseTrackPoint | undefined {
+  const readyPoints = points.filter(point => point && point.confidence >= 0.18) as PoseTrackPoint[]
+  if (!readyPoints.length) return undefined
+  return {
+    x: readyPoints.reduce((sum, point) => sum + point.x, 0) / readyPoints.length,
+    y: readyPoints.reduce((sum, point) => sum + point.y, 0) / readyPoints.length,
+    confidence: readyPoints.reduce((sum, point) => sum + point.confidence, 0) / readyPoints.length,
+    derived: readyPoints.some(point => point.derived),
+  }
+}
+
+function sideScore(points: Record<string, PoseTrackPoint | undefined>, side: 'left' | 'right') {
+  const names = [`${side}Shoulder`, `${side}Elbow`, `${side}Wrist`, `${side}Knee`, `${side}Heel`, `${side}Toe`]
+  const readyPoints = names.map(name => points[name]).filter(pointVisible)
+  if (!readyPoints.length) return 0
+  return readyPoints.reduce((sum, point) => sum + point.confidence, 0) / readyPoints.length
+}
+
+function getFrameOverlayPoints(frame?: OverlayFrame | null): Record<string, PoseTrackPoint | undefined> {
+  if (!frame) return {}
+  const points = frame.points || {}
+  const side = sideScore(points, 'left') >= sideScore(points, 'right') ? 'left' : 'right'
+  const otherSide = side === 'left' ? 'right' : 'left'
+  return {
+    head: points.head,
+    shoulder: points[`${side}Shoulder`] || points[`${otherSide}Shoulder`],
+    elbow: points[`${side}Elbow`] || points[`${otherSide}Elbow`],
+    hand: points[`${side}Wrist`] || points[`${otherSide}Wrist`],
+    hip: points[`${side}Hip`] || points.waist || points[`${otherSide}Hip`],
+    knee: points[`${side}Knee`] || points[`${otherSide}Knee`],
+    foot: averagePoint([points[`${side}Heel`], points[`${side}Toe`]]) ||
+      averagePoint([points[`${otherSide}Heel`], points[`${otherSide}Toe`]]),
+  }
+}
+
+function pointVisible(point?: PoseTrackPoint): point is PoseTrackPoint {
+  return Boolean(point && point.confidence >= 0.3)
+}
+
+function getCurrentOverlayFrame(report: TrainingReport, currentTimeSec: number): OverlayFrame | null {
+  if (!shouldShowPoseOverlay(report)) return null
+  return getInterpolatedTrackFrame(report.poseTrack!.frames, currentTimeSec * 1000)
+}
+
+function getRiderPoints(frame: OverlayFrame | null): RiderPoint[] {
+  if (!frame) return []
+  const points = getFrameOverlayPoints(frame)
+  const labelPoints: Array<{ key: RiderPointKey; point?: PoseTrackPoint }> = [
+    { key: 'head', point: points.head },
+    { key: 'shoulder', point: points.shoulder },
+    { key: 'elbow', point: points.elbow },
+    { key: 'hand', point: points.hand },
+    { key: 'hip', point: points.hip },
+    { key: 'leg', point: points.knee },
+    { key: 'foot', point: points.foot },
+  ]
+  return labelPoints
+    .filter(item => pointVisible(item.point))
+    .map(item => ({ key: item.key, label: RIDER_POINT_LABELS[item.key], point: item.point! }))
+}
+
+function getRiderJointPoints(frame: OverlayFrame | null): RiderPoint[] {
+  if (!frame) return []
+  const points = getFrameOverlayPoints(frame)
+  return Object.keys(points)
+    .filter(key => pointVisible(points[key]))
+    .map(key => ({ key, point: points[key] }))
+}
+
+function getRiderLines(frame: OverlayFrame | null): RiderLine[] {
+  if (!frame) return []
+  const points = getFrameOverlayPoints(frame)
+  return RIDER_LINE_PAIRS
+    .filter(([from, to]) => pointVisible(points[from]) && pointVisible(points[to]))
+    .map(([from, to, segment]) => ({ key: `${from}-${to}`, from: points[from]!, to: points[to]!, segment }))
+}
+
+function getPointSegment(key: string): PoseSegment {
+  if (key === 'head') return 'head'
+  if (key === 'shoulder' || key === 'hip') return 'torso'
+  if (key === 'elbow' || key === 'hand') return 'arm'
+  return 'leg'
+}
+
+function mapOverlayPoint(point: PoseTrackPoint, frame: OverlayFrame | null): { x: number; y: number } {
+  const sourceRatio = frame?.sourceWidth && frame?.sourceHeight
+    ? frame.sourceWidth / frame.sourceHeight
+    : 16 / 9
+  const shellRatio = VIDEO_SHELL_WIDTH_RPX / VIDEO_SHELL_HEIGHT_RPX
+  let rectX = 0
+  let rectY = 0
+  let rectW = 1
+  let rectH = 1
+
+  if (sourceRatio > shellRatio) {
+    rectH = shellRatio / sourceRatio
+    rectY = (1 - rectH) / 2
+  } else {
+    rectW = sourceRatio / shellRatio
+    rectX = (1 - rectW) / 2
+  }
+
+  return {
+    x: rectX + point.x * rectW,
+    y: rectY + point.y * rectH,
+  }
+}
+
+function getPointStyle(point: PoseTrackPoint, frame: OverlayFrame | null): OverlayPointStyle {
+  const mapped = mapOverlayPoint(point, frame)
+  return {
+    left: `${Math.max(2, Math.min(98, mapped.x * 100))}%`,
+    top: `${Math.max(2, Math.min(98, mapped.y * 100))}%`,
+  }
+}
+
+function getLineStyle(line: RiderLine, frame: OverlayFrame | null): OverlayLineStyle {
+  const from = mapOverlayPoint(line.from, frame)
+  const to = mapOverlayPoint(line.to, frame)
+  const dx = (to.x - from.x) * VIDEO_SHELL_WIDTH_RPX
+  const dy = (to.y - from.y) * VIDEO_SHELL_HEIGHT_RPX
+  const width = Math.sqrt(dx * dx + dy * dy) / VIDEO_SHELL_WIDTH_RPX * 100
+  const angle = Math.atan2(dy, dx) * 180 / Math.PI
+  return {
+    left: `${from.x * 100}%`,
+    top: `${from.y * 100}%`,
+    width: `${width}%`,
+    transform: `rotate(${angle}deg)`,
+  }
+}
+
+async function ensureAlbumPermission() {
+  const setting = await Taro.getSetting()
+  const authSetting = (setting.authSetting || {}) as Record<string, boolean | undefined>
+  if (authSetting['scope.writePhotosAlbum']) return true
+  if (authSetting['scope.writePhotosAlbum'] === false) {
+    const modal = await Taro.showModal({
+      title: '需要相册权限',
+      content: '请在设置中开启保存到相册权限后重试。',
+      confirmText: '去设置',
+    })
+    if (!modal.confirm) return false
+    const opened = await Taro.openSetting()
+    return Boolean(((opened.authSetting || {}) as Record<string, boolean | undefined>)['scope.writePhotosAlbum'])
+  }
+  try {
+    await Taro.authorize({ scope: 'scope.writePhotosAlbum' })
+    return true
+  } catch {
+    return false
+  }
+}
+
+function drawWrappedText(
+  ctx: Taro.CanvasContext,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxLines: number,
+) {
+  const chars = String(text || '').split('')
+  let line = ''
+  let lineCount = 0
+  for (let index = 0; index < chars.length; index += 1) {
+    const next = line + chars[index]
+    const width = ctx.measureText ? ctx.measureText(next).width : next.length * 24
+    if (width > maxWidth && line) {
+      ctx.fillText(line, x, y)
+      y += lineHeight
+      lineCount += 1
+      line = chars[index]
+      if (lineCount >= maxLines - 1) {
+        let finalLine = line
+        for (let tailIndex = index + 1; tailIndex < chars.length; tailIndex += 1) {
+          const nextFinalLine = `${finalLine}${chars[tailIndex]}`
+          const finalWidth = ctx.measureText ? ctx.measureText(`${nextFinalLine}…`).width : nextFinalLine.length * 24
+          if (finalWidth > maxWidth) break
+          finalLine = nextFinalLine
+        }
+        ctx.fillText(`${finalLine}…`, x, y)
+        return y + lineHeight
+      }
+    } else {
+      line = next
+    }
+  }
+  if (line) {
+    ctx.fillText(line, x, y)
+    y += lineHeight
+  }
+  return y
+}
+
+function drawSectionTitle(ctx: Taro.CanvasContext, title: string, y: number) {
+  ctx.setFillStyle('#22f0c8')
+  ctx.fillRect(42, y - 24, 8, 32)
+  ctx.setFillStyle('#e6edf3')
+  ctx.setFontSize(30)
+  ctx.fillText(title, 64, y)
+  return y + 42
+}
+
+function drawCard(ctx: Taro.CanvasContext, x: number, y: number, width: number, height: number) {
+  ctx.setFillStyle('#101821')
+  ctx.fillRect(x, y, width, height)
+  ctx.setStrokeStyle('#23303d')
+  ctx.strokeRect(x, y, width, height)
+}
+
+function drawTextList(ctx: Taro.CanvasContext, title: string, items: string[], y: number, color = '#c9d1d9') {
+  if (!items.length) return y
+  y = drawSectionTitle(ctx, title, y)
+  ctx.setFontSize(24)
+  items.forEach((item, index) => {
+    ctx.setFillStyle(color)
+    y = drawWrappedText(ctx, `${index + 1}. ${item}`, 52, y, REPORT_POSTER_WIDTH - 104, 36, 4) + 12
+  })
+  return y + 18
+}
+
+function makeReportPoster(
+  report: TrainingReport,
+  scoreEntries: [string, number][],
+  topAngles: TrainingReport['jointAngles'],
+  safetyEvaluation: string[],
+) {
+  return new Promise<string>((resolve, reject) => {
+    const ctx = Taro.createCanvasContext(REPORT_POSTER_CANVAS_ID)
+    const width = REPORT_POSTER_WIDTH
+    const height = REPORT_POSTER_HEIGHT
+    const scale = REPORT_POSTER_CANVAS_WIDTH / REPORT_POSTER_WIDTH
+    ctx.scale(scale, scale)
+
+    ctx.setFillStyle('#0d1117')
+    ctx.fillRect(0, 0, width, height)
+    drawCard(ctx, 32, 32, width - 64, 278)
+
+    ctx.setFillStyle('#e6edf3')
+    ctx.setFontSize(30)
+    drawWrappedText(ctx, 'SOAI-EQ 马术姿态完整报告', 64, 82, width - 128, 40, 2)
+    ctx.setFillStyle('#8b949e')
+    ctx.setFontSize(22)
+    ctx.fillText(report.trainingDate, 64, 148)
+
+    ctx.setFillStyle('#22f0c8')
+    ctx.setFontSize(92)
+    ctx.fillText(String(report.overallScore), 64, 254)
+    ctx.setFillStyle('#c9d1d9')
+    ctx.setFontSize(30)
+    ctx.fillText('分', 184, 248)
+    ctx.setFillStyle('#8b949e')
+    ctx.setFontSize(24)
+    drawWrappedText(ctx, `追踪 ${report.trackingFrames} 帧 · 置信度 ${report.trackingConfidence}%`, 292, 216, 324, 34, 2)
+
+    let y = 374
+    y = drawSectionTitle(ctx, '5 维评分', y)
+    scoreEntries.forEach(([name, value]) => {
+      ctx.setFillStyle('#c9d1d9')
+      ctx.setFontSize(24)
+      ctx.fillText(name, 48, y + 20)
+      ctx.setFillStyle('#25313d')
+      ctx.fillRect(186, y, 330, 18)
+      ctx.setFillStyle('#22f0c8')
+      ctx.fillRect(186, y, Math.max(0, Math.min(100, value)) * 3.3, 18)
+      ctx.setFillStyle('#ffffff')
+      ctx.fillText(String(value), 548, y + 20)
+      y += 52
+    })
+
+    y += 26
+    y = drawSectionTitle(ctx, '关键角度', y)
+    topAngles.slice(0, 8).forEach((angle, index) => {
+      const x = index % 2 === 0 ? 42 : 360
+      const boxY = y + Math.floor(index / 2) * 112
+      drawCard(ctx, x, boxY, 288, 88)
+      ctx.setFillStyle('#8b949e')
+      ctx.setFontSize(20)
+      drawWrappedText(ctx, angle.joint, x + 20, boxY + 30, 150, 24, 1)
+      ctx.setFillStyle(angle.status === 'warning' ? '#d29922' : '#22f0c8')
+      ctx.setFontSize(32)
+      ctx.fillText(`${angle.angle}°`, x + 20, boxY + 70)
+      ctx.setFillStyle('#8b949e')
+      ctx.setFontSize(18)
+      drawWrappedText(ctx, angle.normal, x + 128, boxY + 68, 138, 22, 1)
+    })
+    y += Math.ceil(Math.min(topAngles.length || 1, 8) / 2) * 112 + 30
+
+    y = drawTextList(ctx, '综合评价', safetyEvaluation, y)
+    y = drawTextList(ctx, '安全提醒', report.riskPoints, y, '#f0c36a')
+    y = drawTextList(ctx, '改进建议', report.improvements, y)
+    y = drawTextList(ctx, '主要问题', report.problemPoints, y)
+
+    y = drawSectionTitle(ctx, '下次训练重点', y)
+    ctx.setFillStyle('#c9d1d9')
+    ctx.setFontSize(24)
+    y = drawWrappedText(ctx, report.nextTrainingFocus || '暂无', 52, y, width - 104, 36, 5) + 22
+    if (report.trendSummary) {
+      y = drawSectionTitle(ctx, '趋势总结', y)
+      ctx.setFillStyle('#c9d1d9')
+      ctx.setFontSize(24)
+      drawWrappedText(ctx, report.trendSummary, 52, y, width - 104, 36, 4)
+    }
+
+    ctx.setFillStyle('#22f0c8')
+    ctx.setFontSize(24)
+    ctx.fillText('SOAI-EQ 专业分析平台', 42, height - 54)
+    ctx.setFillStyle('#8b949e')
+    ctx.setFontSize(20)
+    drawWrappedText(ctx, '报告结果仅作训练参考，请结合教练现场判断。', 292, height - 58, 330, 26, 2)
+
+    ctx.draw(false, () => {
+      setTimeout(() => {
+        Taro.canvasToTempFilePath({
+          canvasId: REPORT_POSTER_CANVAS_ID,
+          width: REPORT_POSTER_CANVAS_WIDTH,
+          height: REPORT_POSTER_CANVAS_HEIGHT,
+          destWidth: REPORT_POSTER_WIDTH,
+          destHeight: REPORT_POSTER_HEIGHT,
+          fileType: 'jpg',
+          quality: 0.95,
+          success: (res) => resolve(res.tempFilePath),
+          fail: reject,
+        })
+      }, 120)
+    })
+  })
 }
 
 export default function ReportDetailPage() {
@@ -176,7 +454,6 @@ export default function ReportDetailPage() {
   const [submittingFeedback, setSubmittingFeedback] = useState(false)
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const [videoTimeSec, setVideoTimeSec] = useState(0)
-  const [videoMeta, setVideoMeta] = useState<VideoMeta>(null)
 
   useEffect(() => {
     reportService.getReport(reportId)
@@ -187,23 +464,23 @@ export default function ReportDetailPage() {
       })
   }, [reportId])
 
-  useEffect(() => {
-    if (!report) return
-    Taro.nextTick(() => drawPoseTrack(report, videoTimeSec, videoMeta))
-  }, [report, videoTimeSec, videoMeta])
-
   async function handleSaveScreenshot() {
-    try {
-      await Taro.authorize({ scope: 'scope.writePhotosAlbum' })
-    } catch {
-      Taro.showModal({
-        title: '需要相册权限',
-        content: '请在设置中开启相册权限后重试',
-        showCancel: false,
-      })
+    if (!report) return
+    const allowed = await ensureAlbumPermission()
+    if (!allowed) {
+      Taro.showToast({ title: '未获得相册权限', icon: 'none' })
       return
     }
-    Taro.showToast({ title: '截图功能开发中', icon: 'none', duration: 2000 })
+    Taro.showLoading({ title: '生成报告图' })
+    try {
+      const posterPath = await makeReportPoster(report, scoreEntries, topAngles, safetyEvaluation)
+      await Taro.saveImageToPhotosAlbum({ filePath: posterPath })
+      Taro.showToast({ title: '已保存到相册', icon: 'success' })
+    } catch {
+      Taro.showToast({ title: '保存失败，请重试', icon: 'none' })
+    } finally {
+      Taro.hideLoading()
+    }
   }
 
   function toggleFeedbackTag(tag: string) {
@@ -268,9 +545,14 @@ export default function ReportDetailPage() {
       report.riskPoints[0] || '本次未发现明显高风险动作，但 AI 不能替代教练对马匹状态、场地和学员体感的现场判断。',
       '建议穿戴合规马术护具，训练中保持与教练耳机沟通，出现失衡、紧张或路线偏移时先减速确认。',
     ]
+  const currentOverlayFrame = getCurrentOverlayFrame(report, videoTimeSec)
+  const currentRiderPoints = getRiderPoints(currentOverlayFrame)
+  const currentJointPoints = getRiderJointPoints(currentOverlayFrame)
+  const currentRiderLines = getRiderLines(currentOverlayFrame)
 
   return (
     <View className='report-detail-page'>
+      <Canvas canvasId={REPORT_POSTER_CANVAS_ID} className='report-poster-canvas' />
       <View className='report-page-header'>
         <View className='report-back-home' onClick={goHome}>‹ 返回首页</View>
         <Text className='report-page-title'>完整报告</Text>
@@ -308,17 +590,35 @@ export default function ReportDetailPage() {
               objectFit='contain'
               className='training-video'
               onTimeUpdate={(e) => setVideoTimeSec(e.detail.currentTime)}
-              onLoadedMetaData={(e) => setVideoMeta({
-                width: Number(e.detail.width || 0),
-                height: Number(e.detail.height || 0),
-              })}
             />
-            {shouldShowPoseOverlay(report) && (
-              <Canvas
-                canvasId={POSE_CANVAS_ID}
-                className='pose-track-canvas'
-                disableScroll
-              />
+            {currentRiderPoints.length > 0 && (
+              <CoverView className='pose-cover-layer'>
+                {currentRiderLines.map((line) => (
+                  <CoverView
+                    key={line.key}
+                    className={`pose-cover-line pose-cover-line-${line.segment}`}
+                    style={getLineStyle(line, currentOverlayFrame)}
+                  />
+                ))}
+                {currentJointPoints.map(({ key, point }) => (
+                  <CoverView
+                    key={key}
+                    className={`pose-cover-joint pose-cover-${getPointSegment(key)}`}
+                    style={getPointStyle(point, currentOverlayFrame)}
+                  >
+                    <CoverView className='pose-cover-dot' />
+                  </CoverView>
+                ))}
+                {currentRiderPoints.map(({ key, label, point }) => (
+                  <CoverView
+                    key={`label-${key}`}
+                    className={`pose-cover-point pose-cover-${getPointSegment(key)}`}
+                    style={getPointStyle(point, currentOverlayFrame)}
+                  >
+                    <CoverView className='pose-cover-label'>{label}</CoverView>
+                  </CoverView>
+                ))}
+              </CoverView>
             )}
           </View>
         ) : (
@@ -330,10 +630,10 @@ export default function ReportDetailPage() {
         )}
         <View className='video-meta-tags'>
           <View className='vmtag'>训练片段</View>
-          <View className='vmtag'>{shouldShowPoseOverlay(report) ? '真实姿态追踪' : '仅视频回放'}</View>
+          <View className='vmtag'>{hasPoseOverlayVideo(report) || shouldShowPoseOverlay(report) ? '真实姿态跟随' : '仅视频回放'}</View>
           <View className='vmtag'>15 秒内</View>
         </View>
-        {report.videoVisibleToday && report.videoUrl && !shouldShowPoseOverlay(report) && (
+        {report.videoVisibleToday && report.videoUrl && !hasPoseOverlayVideo(report) && !shouldShowPoseOverlay(report) && (
           <View className='muted' style={{ marginTop: '12rpx', fontSize: '22rpx' }}>
             真实模型未返回可用轨迹，本次不展示关节点。
           </View>
@@ -357,7 +657,21 @@ export default function ReportDetailPage() {
               <Text className='tracking-value'>{report.trackingFrames} frames · {report.trackingConfidence}% conf</Text>
             </View>
           </View>
-
+          <View className='analytics-score-overlay'>
+            <View className='analytics-overall-score'>
+              <Text className='analytics-overall-value'>{report.overallScore}</Text>
+              <Text className='analytics-overall-label'>/100</Text>
+            </View>
+            {scoreEntries.slice(0, 4).map(([name, value]) => (
+              <View key={name} className='analytics-score-item'>
+                <Text className='analytics-score-name'>{name}</Text>
+                <Text className='analytics-score-value'>{value}</Text>
+                <View className='analytics-score-track'>
+                  <View className='analytics-score-fill' style={{ width: `${value}%` }} />
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
 

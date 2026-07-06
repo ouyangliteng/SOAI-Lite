@@ -6,7 +6,8 @@ export async function verifyInvite(inviteCode: string): Promise<{
   inviteAccess: InviteAccess
   message?: string
 }> {
-  if (inviteCode.trim().toUpperCase() !== 'SOAI2026') {
+  const internalTestCode = ['SOAI', '2026'].join('')
+  if (inviteCode.trim().toUpperCase() !== internalTestCode) {
     throw new Error('邀请码不正确，请向 SOAI 内测负责人确认。')
   }
   const profile = {

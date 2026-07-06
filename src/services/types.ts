@@ -29,6 +29,7 @@ export interface UploadQuota {
   limit: number
   used: number
   remaining: number
+  unlimited?: boolean
   date: string
 }
 
@@ -104,6 +105,7 @@ export interface TrainingReport {
   videoId: string
   videoVisibleToday: boolean
   videoUrl?: string
+  poseOverlayVideoUrl?: string
   overallScore: number
   scores: ScoreDimensions
   jointAngles: JointAngle[]

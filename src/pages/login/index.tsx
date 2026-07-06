@@ -10,27 +10,18 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [agreePolicy, setAgreePolicy] = useState(false)
   const [inviteCode, setInviteCode] = useState('')
-  const [inviteVerifiedAt, setInviteVerifiedAt] = useState(() => getInviteVerifiedAt())
   const { setToken, setProfile, logout } = useAuthStore()
 
   useEffect(() => {
     Taro.removeStorageSync('token')
     Taro.removeStorageSync('profile')
+    Taro.removeStorageSync('soai_lite_invite_verified_at')
     logout()
-    setInviteVerifiedAt(getInviteVerifiedAt())
   }, [logout])
 
   async function handleWxLogin() {
     if (loading) return
     const normalizedInviteCode = inviteCode.trim().replace(/\s+/g, '').toUpperCase()
-    const hasInviteAccess = Boolean(inviteVerifiedAt)
-    if (!hasInviteAccess && !normalizedInviteCode) {
-      Taro.showToast({
-        title: '请输入内部邀请码',
-        icon: 'none',
-      })
-      return
-    }
     if (!agreePolicy) {
       Taro.showToast({
         title: '请先阅读并同意相关协议',
@@ -45,15 +36,15 @@ export default function LoginPage() {
       const anonymousId = getOrCreateAnonymousId()
       const loginUserInfo = wxUserInfo || undefined
       const { token, profile } = await authService.loginWithWx(code, anonymousId, loginUserInfo)
-      let finalProfile = mergeInviteAccess(mergeWxUserInfo(profile, loginUserInfo), inviteVerifiedAt)
+      let finalProfile = mergeWxUserInfo(profile, loginUserInfo)
       Taro.setStorageSync('token', token)
       Taro.setStorageSync('profile', finalProfile)
-      if (!hasInviteAccess) {
+      if (!finalProfile.inviteVerifiedAt) {
+        if (!normalizedInviteCode) {
+          throw new Error('请输入内部邀请码')
+        }
         const inviteResult = await inviteService.verifyInvite(normalizedInviteCode)
-        const verifiedAt = inviteResult.profile.inviteVerifiedAt || new Date().toISOString()
-        setInviteVerifiedAt(verifiedAt)
-        setInviteVerifiedAtStorage(verifiedAt)
-        finalProfile = mergeInviteAccess(mergeWxUserInfo(inviteResult.profile, loginUserInfo), verifiedAt)
+        finalProfile = mergeWxUserInfo(inviteResult.profile, loginUserInfo)
       }
       if (loginUserInfo?.name || loginUserInfo?.avatarUrl) {
         finalProfile = await authService.updateProfile({
@@ -61,7 +52,7 @@ export default function LoginPage() {
           name: loginUserInfo.name || finalProfile.name,
           avatarUrl: loginUserInfo.avatarUrl || finalProfile.avatarUrl,
         }).catch(() => finalProfile)
-        finalProfile = mergeInviteAccess(mergeWxUserInfo(finalProfile, loginUserInfo), inviteVerifiedAt || finalProfile.inviteVerifiedAt)
+        finalProfile = mergeWxUserInfo(finalProfile, loginUserInfo)
       }
       Taro.setStorageSync('profile', finalProfile)
       setToken(token)
@@ -98,27 +89,20 @@ export default function LoginPage() {
       </View>
 
       <View className='lp-body'>
-        {inviteVerifiedAt ? (
-          <View className='lp-invite-panel lp-invite-panel-ok'>
-            <Text className='lp-invite-label'>内部测试资格</Text>
-            <Text className='lp-invite-ok'>已通过邀请码验证，本次只需微信授权登录</Text>
-          </View>
-        ) : (
-          <View className='lp-invite-panel'>
-            <Text className='lp-invite-label'>内部测试邀请码</Text>
-            <Input
-              className='lp-invite-input'
-              value={inviteCode}
-              maxlength={24}
-              placeholder='请输入 SOAI 内测邀请码'
-              placeholderClass='lp-invite-placeholder'
-              confirmType='done'
-              disabled={loading}
-              onInput={(e) => setInviteCode(String(e.detail.value || ''))}
-              onConfirm={handleWxLogin}
-            />
-          </View>
-        )}
+        <View className='lp-invite-panel'>
+          <Text className='lp-invite-label'>内部测试邀请码</Text>
+          <Input
+            className='lp-invite-input'
+            value={inviteCode}
+            maxlength={24}
+            placeholder='请输入内测邀请码'
+            placeholderClass='lp-invite-placeholder'
+            confirmType='done'
+            disabled={loading}
+            onInput={(e) => setInviteCode(String(e.detail.value || ''))}
+            onConfirm={handleWxLogin}
+          />
+        </View>
 
         <Button
           className={`lp-wx-btn${loading ? ' lp-wx-btn-loading' : ''}`}
@@ -178,23 +162,6 @@ function normalizeWechatName(value?: string) {
   const name = String(value || '').trim()
   if (!name || name === '微信用户' || name === 'WeChat User') return ''
   return name
-}
-
-function mergeInviteAccess(profile: StudentProfile, verifiedAt?: string) {
-  if (!verifiedAt || profile.inviteVerifiedAt) return profile
-  return {
-    ...profile,
-    inviteStatus: 'verified',
-    inviteVerifiedAt: verifiedAt,
-  }
-}
-
-function getInviteVerifiedAt() {
-  return Taro.getStorageSync('soai_lite_invite_verified_at') as string
-}
-
-function setInviteVerifiedAtStorage(verifiedAt: string) {
-  Taro.setStorageSync('soai_lite_invite_verified_at', verifiedAt)
 }
 
 function getOrCreateAnonymousId() {

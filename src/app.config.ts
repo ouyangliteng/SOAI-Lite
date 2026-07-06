@@ -17,6 +17,11 @@ export default defineAppConfig({
     navigationBarTextStyle: 'white',
     backgroundColor: '#0d1117',
   },
+  permission: {
+    'scope.writePhotosAlbum': {
+      desc: '用于将训练报告截图保存到手机相册',
+    },
+  },
   tabBar: {
     custom: true,
     color: '#8b949e',
