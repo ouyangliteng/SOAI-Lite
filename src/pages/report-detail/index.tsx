@@ -261,29 +261,67 @@ export default function ReportDetailPage() {
       })
   }, [reportId])
 
-  async function handleExportPdf() {
-    if (!report || exportingPdf) return
-    setExportingPdf(true)
+  async function downloadReportPdf() {
+    if (!report) throw new Error('REPORT_EMPTY')
+    const token = Taro.getStorageSync('token') || ''
+    const download = await Taro.downloadFile({
+      url: reportService.getReportPdfUrl(report.id),
+      header: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    })
+    if (download.statusCode && download.statusCode >= 400) {
+      throw new Error(`PDF ${download.statusCode}`)
+    }
+    return download.tempFilePath
+  }
+
+  async function previewReportPdf() {
     Taro.showLoading({ title: '生成 PDF' })
     try {
-      const token = Taro.getStorageSync('token') || ''
-      const download = await Taro.downloadFile({
-        url: reportService.getReportPdfUrl(report.id),
-        header: {
-          Authorization: token ? `Bearer ${token}` : '',
-        },
-      })
-      if (download.statusCode && download.statusCode >= 400) {
-        throw new Error(`PDF ${download.statusCode}`)
-      }
+      const filePath = await downloadReportPdf()
       await Taro.openDocument({
-        filePath: download.tempFilePath,
+        filePath,
         fileType: 'pdf',
       })
     } catch {
       Taro.showToast({ title: 'PDF 打开失败，请重试', icon: 'none' })
     } finally {
       Taro.hideLoading()
+    }
+  }
+
+  async function shareReportPdf() {
+    Taro.showLoading({ title: '准备转发' })
+    try {
+      const filePath = await downloadReportPdf()
+      const shareFileMessage = (Taro as any).shareFileMessage
+      if (typeof shareFileMessage !== 'function') {
+        throw new Error('SHARE_FILE_UNSUPPORTED')
+      }
+      await shareFileMessage({
+        filePath,
+        fileName: `SOAI-EQ-${report?.trainingDate || 'report'}.pdf`,
+      })
+    } catch {
+      Taro.showToast({ title: '当前微信版本不支持文件转发', icon: 'none' })
+    } finally {
+      Taro.hideLoading()
+    }
+  }
+
+  async function handleExportPdf() {
+    if (!report || exportingPdf) return
+    setExportingPdf(true)
+    try {
+      const action = await Taro.showActionSheet({
+        itemList: ['预览完整 PDF', '转发 PDF 给好友'],
+      })
+      if (action.tapIndex === 0) await previewReportPdf()
+      if (action.tapIndex === 1) await shareReportPdf()
+    } catch {
+      // User cancelled the action sheet.
+    } finally {
       setExportingPdf(false)
     }
   }
@@ -648,7 +686,7 @@ export default function ReportDetailPage() {
 
         <View className={`save-btn ${exportingPdf ? 'save-btn-disabled' : ''}`} onClick={handleExportPdf}>
           <Text>PDF</Text>
-          <Text>{exportingPdf ? '正在生成完整报告' : '导出完整报告 PDF'}</Text>
+          <Text>{exportingPdf ? '处理中' : '预览或转发完整 PDF'}</Text>
         </View>
 
         <View className='report-bottom-actions'>
