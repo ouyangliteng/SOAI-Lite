@@ -28,10 +28,17 @@ function request<T>(path: string, opts?: { method?: 'POST'; body?: object }): Pr
 
 function fixVideoUrl(url: string): string {
   if (!url) return ''
+  const token = Taro.getStorageSync('token') || ''
+  const withToken = (target: string) => {
+    if (!token) return target
+    const joiner = target.includes('?') ? '&' : '?'
+    return `${target}${joiner}soai_token=${encodeURIComponent(token)}`
+  }
   // backend local storage uses local://soai/ prefix; remap to the lite API storage route.
   if (url.startsWith('local://soai/')) {
-    return `${BASE}/storage/${url.slice('local://soai/'.length)}`
+    return withToken(`${BASE}/storage/${url.slice('local://soai/'.length)}`)
   }
+  if (url.includes('/storage/') || url.includes('/api/lite/v1/storage/')) return withToken(url)
   return url
 }
 

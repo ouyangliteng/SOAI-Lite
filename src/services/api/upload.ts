@@ -61,10 +61,14 @@ export async function doUpload(
   onProgress: (p: number) => void
 ): Promise<void> {
   return new Promise((resolve, reject) => {
+    const token = Taro.getStorageSync('token') || ''
     const task = Taro.uploadFile({
       url: uploadUrl,
       filePath,
       name: 'file',
+      header: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
       success: (res: { statusCode?: number; data?: string }) => {
         if (res.statusCode && res.statusCode >= 400) {
           let message = `视频上传接口返回 ${res.statusCode}`
