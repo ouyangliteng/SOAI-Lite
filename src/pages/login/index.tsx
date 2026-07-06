@@ -70,7 +70,7 @@ export default function LoginPage() {
     }
   }
 
-  function goAgreement(type: 'user' | 'privacy') {
+  function goAgreement(type: 'user' | 'privacy' | 'minor') {
     Taro.navigateTo({ url: `/pages/agreement/${type}/index` })
   }
 
@@ -118,6 +118,7 @@ export default function LoginPage() {
           <View className='lp-agreement-links'>
             <Text className='lp-link' onClick={() => goAgreement('user')}>《SOAI-EQ用户服务协议》</Text>
             <Text className='lp-link' onClick={() => goAgreement('privacy')}>《SOAI-EQ隐私政策》</Text>
+            <Text className='lp-link' onClick={() => goAgreement('minor')}>《未成年人保护说明》</Text>
           </View>
 
           <View className='lp-consent-row'>

@@ -236,7 +236,7 @@ function getLineStyle(line: RiderLine, frame: OverlayFrame | null): OverlayLineS
 
 export default function ReportDetailPage() {
   const router = useRouter()
-  const reportId = router.params.id ?? 'report_mock_001'
+  const reportId = router.params.id || ''
   const [report, setReport] = useState<TrainingReport | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<NavTab>('assessment')
@@ -253,6 +253,14 @@ export default function ReportDetailPage() {
   const [videoTimeSec, setVideoTimeSec] = useState(0)
 
   useEffect(() => {
+    if (!reportId) {
+      setLoading(false)
+      Taro.showToast({ title: '未找到报告', icon: 'none' })
+      Taro.redirectTo({ url: '/pages/reports/index' }).catch(() => {
+        Taro.switchTab({ url: '/pages/reports/index' })
+      })
+      return
+    }
     reportService.getReport(reportId)
       .then(r => { setReport(r); setLoading(false) })
       .catch(() => {
