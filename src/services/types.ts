@@ -170,5 +170,6 @@ export interface AnalysisService {
 export interface ReportService {
   listReports(): Promise<ReportListItem[]>
   getReport(reportId: string): Promise<TrainingReport>
+  getReportPdfUrl(reportId: string): string
   submitReportFeedback(reportId: string, payload: ReportFeedbackPayload): Promise<void>
 }

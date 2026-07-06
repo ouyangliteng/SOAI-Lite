@@ -90,6 +90,10 @@ export async function getReport(reportId: string): Promise<TrainingReport> {
   return { ...MOCK_REPORT, id: reportId }
 }
 
+export function getReportPdfUrl(reportId: string): string {
+  return `https://api.soai.yun/api/lite/v1/reports/${encodeURIComponent(reportId)}/pdf`
+}
+
 export async function submitReportFeedback(_reportId: string, _payload: ReportFeedbackPayload): Promise<void> {
   await delay(200)
 }

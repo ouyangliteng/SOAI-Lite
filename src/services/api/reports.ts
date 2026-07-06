@@ -90,6 +90,10 @@ export async function getReport(reportId: string): Promise<TrainingReport> {
   }
 }
 
+export function getReportPdfUrl(reportId: string): string {
+  return `${BASE}/reports/${encodeURIComponent(reportId)}/pdf`
+}
+
 export async function listReports(): Promise<ReportListItem[]> {
   const data = await request<{ items?: any[] }>(`/reports?limit=10`)
   return (data.items || []).map(item => ({
